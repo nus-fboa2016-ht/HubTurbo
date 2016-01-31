@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -188,7 +189,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private List<Label> populateInitialLabels(List<String> initialLabels, 
                                                List<String> removedLabels,
                                                Optional<String> suggestion) {
-        return initialLabels.stream().filter(label -> !removedLabels.contains(label))
+        return initialLabels.stream()
             .map(label -> createBasicLabel(label))
             .map(label -> processInitialLabel(label, removedLabels, suggestion))
             .collect(Collectors.toList());
