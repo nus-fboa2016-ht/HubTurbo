@@ -13,7 +13,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private static final int ELEMENT_MAX_WIDTH = 108;
     private final LabelPickerUILogic uiLogic;
     private final List<TurboLabel> repoLabels;
+    private final Map<String, Boolean> groups;
 
     @FXML
     private VBox mainLayout;
@@ -49,11 +52,25 @@ public class LabelPickerDialog extends Dialog<List<String>> {
             repoLabels.stream().map(TurboLabel::getActualName)
             .collect(Collectors.toSet()));
 
+        // Logic initialisation
+        this.groups = initGroups(repoLabels);
+
         // UI creation
         initUI(stage, issue);
         updateUI(initialState);
         setupEvents(stage);
         Platform.runLater(queryField::requestFocus);
+    }
+
+    // Init Assets 
+    private Map<String, Boolean> initGroups(List<TurboLabel> repoLabels) {
+        Map<String, Boolean> groups = new HashMap<>();
+        repoLabels.forEach(label -> {
+            if (label.getGroup().isPresent() && !groups.containsKey(label.getGroup().get())) {
+                groups.put(label.getGroup().get(), label.isExclusive());
+            }        
+        });
+        return groups;
     }
 
     // Initilisation of UI
@@ -147,10 +164,13 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         List<String> initialLabels = state.getInitialLabels();
         List<String> addedLabels = state.getAddedLabels();
         List<String> removedLabels = state.getRemovedLabels();
+        List<String> matchedLabels = state.getMatchedLabels();
+        List<String> assignedLabels = state.getAssignedLabels();
         Optional<String> suggestion = state.getCurrentSuggestion();
        
         // Population of UI elements
         populateAssignedLabels(initialLabels, addedLabels, removedLabels, suggestion);
+        populateFeedbackLabels(initialLabels, assignedLabels, matchedLabels, suggestion);
     }
 
     private boolean hasNoLabels(List<String> initialLabels, 
@@ -209,47 +229,70 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         
     }
 
-    private void populateBottomBox(List<PickerLabel> bottomLabels, Map<String, Boolean> groups) {
+    private void populateFeedbackLabels(List<String> initialLabels,
+                                        List<String> assignedLabels,
+                                        List<String> matchedLabels,
+                                        Optional<String> suggestion) {
         feedbackLabels.getChildren().clear();
-        if (bottomLabels.isEmpty()) {
+        if (initialLabels.isEmpty()) {
             Label label = new Label("No labels in repository. ");
             label.setPadding(new Insets(2, 5, 2, 5));
             feedbackLabels.getChildren().add(label);
         } else {
-            List<String> groupNames = groups.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList());
-            Collections.sort(groupNames, String.CASE_INSENSITIVE_ORDER);
-
-            groupNames.stream().forEach(group -> {
-                Label groupName = new Label(group + (groups.get(group) ? "." : "-"));
-                groupName.setPadding(new Insets(0, 5, 5, 0));
-                groupName.setMaxWidth(ELEMENT_MAX_WIDTH - 10);
-                groupName.setStyle("-fx-font-size: 110%; -fx-font-weight: bold;");
-
-                FlowPane groupPane = new FlowPane();
-                groupPane.setHgap(5);
-                groupPane.setVgap(5);
-                groupPane.setPadding(new Insets(0, 0, 10, 10));
-                bottomLabels
-                        .stream()
-                        .filter(label -> label.getGroup().isPresent())
-                        .filter(label -> label.getGroup().get().equalsIgnoreCase(group))
-                        .forEach(label -> groupPane.getChildren().add(label.getNode()));
-                feedbackLabels.getChildren().addAll(groupName, groupPane);
+            List<String> groupNames = getGroupNames(groups);
+            groupNames.forEach(group -> {
+                addGroup(repoLabels, groups, group, matchedLabels);
             });
-
-            FlowPane noGroup = new FlowPane();
-            noGroup.setHgap(5);
-            noGroup.setVgap(5);
-            noGroup.setPadding(new Insets(5, 0, 0, 0));
-            bottomLabels
-                    .stream()
-                    .filter(label -> !label.getGroup().isPresent())
-                    .forEach(label -> noGroup.getChildren().add(label.getNode()));
-            if (noGroup.getChildren().size() > 0) feedbackLabels.getChildren().add(noGroup);
+            addNoGroup(matchedLabels, assignedLabels, suggestion);
         }
     }
+                                        
+    // Utility methods
 
-    // Utility UI methods
+    // TODO remove side effect
+    private void addSelected(List<Label> labels, List<String> matchedLabels) {
+        labels.stream().forEach(label -> {
+            label.setText(label.getText() + " ✓" );});
+    }
+
+    // TODO Remove side effect 
+    private void addNoGroup(List<String> matchedLabels, 
+                                List<String> assignedLabels,
+                                Optional<String> suggestion) {
+        FlowPane noGroup = new FlowPane();
+        noGroup.setHgap(5);
+        noGroup.setVgap(5);
+        noGroup.setPadding(new Insets(5, 0, 0, 0));
+        repoLabels.stream().filter(label -> !label.getGroup().isPresent())
+                .forEach(label -> {
+                    noGroup.getChildren().add(label.getNode());
+                });
+        //addSelected(labels, matchedLabels);
+        if (noGroup.getChildren().size() > 0) {
+            feedbackLabels.getChildren().add(noGroup);
+        }
+
+    }
+
+    private void addGroup(List<TurboLabel> repoLabels, 
+                          Map<String, Boolean> groups, String group,
+                          List<String> matchedLabels) {
+        Label groupName = new Label(group + (groups.get(group) ? "." : "-"));
+        groupName.setPadding(new Insets(0, 5, 5, 0));
+        groupName.setMaxWidth(ELEMENT_MAX_WIDTH - 10);
+        groupName.setStyle("-fx-font-size: 110%; -fx-font-weight: bold;");
+
+        FlowPane groupPane = new FlowPane();
+        groupPane.setHgap(5);
+        groupPane.setVgap(5);
+        groupPane.setPadding(new Insets(0, 0, 10, 10));
+        repoLabels
+                .stream()
+                .filter(label -> label.getGroup().isPresent())
+                .filter(label -> label.getGroup().get().equalsIgnoreCase(group))
+                .forEach(label -> groupPane.getChildren().add(label.getNode()));
+        feedbackLabels.getChildren().addAll(groupName, groupPane);
+    }
 
     private String getColour(String name, List<TurboLabel> repoLabels) {
         String colour = repoLabels.stream().filter(
@@ -276,6 +319,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
         label.setPrefWidth(width + 30);
+        // label.setOnMouseClicked(e -> uiLogic.getNewState(label.getText()));
         return label;
     }
 
@@ -295,4 +339,9 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         return createBasicLabel(name);
     }
 
+    private List<String> getGroupNames(Map<String, Boolean> groups) {
+        List<String> groupNames = groups.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList());
+        Collections.sort(groupNames);
+        return groupNames;
+    }
 }
