@@ -15,10 +15,15 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.sun.javafx.tk.FontLoader;
+import com.sun.javafx.tk.Toolkit;
 
 import ui.UI;
 
@@ -39,6 +44,11 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private VBox feedbackLabels;
 
     LabelPickerDialog(TurboIssue issue, List<TurboLabel> repoLabels, Stage stage) {
+        LabelPickerState initialState = new LabelPickerState(new HashSet<String>(issue.getLabels()));
+        uiLogic = new LabelPickerUILogic(initialState, 
+            repoLabels.stream().map(TurboLabel::getActualName)
+            .collect(Collectors.toSet()));
+
         // UI creation
         initUI(stage, issue);
         setupEvents(stage);
@@ -95,14 +105,8 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         // defines what happens when user confirms/presses enter
         setResultConverter(dialogButton -> {
             if (dialogButton == confirmButtonType) {
-                // if there is a highlighted label, toggle that label first
-                if (uiLogic.hasHighlightedLabel()) uiLogic.toggleSelectedLabel(
-                        queryField.getText());
-                // if user confirms selection, return list of labels
-                return uiLogic.getResultList().entrySet().stream()
-                        .filter(Map.Entry::getValue)
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
+                // TODO return assignedLabels from current state
+                return null;
             }
             return null;
         });
@@ -125,21 +129,9 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     }
 
     private void setupKeyEvents() {
-        queryField.textProperty().addListener((observable, oldValue, newValue) -> {
-            uiLogic.processTextFieldChange(newValue.toLowerCase());
-        });
         queryField.setOnKeyPressed(e -> {
             if (!e.isAltDown() && !e.isMetaDown() && !e.isControlDown()) {
-                if (e.getCode() == KeyCode.DOWN) {
-                    e.consume();
-                    uiLogic.moveHighlightOnLabel(true);
-                } else if (e.getCode() == KeyCode.UP) {
-                    e.consume();
-                    uiLogic.moveHighlightOnLabel(false);
-                } else if (e.getCode() == KeyCode.SPACE) {
-                    e.consume();
-                    uiLogic.toggleSelectedLabel(queryField.getText());
-                }
+                uiLogic.getNewState(e, queryField.getText().toLowerCase());
             }
         });
     }
@@ -150,10 +142,18 @@ public class LabelPickerDialog extends Dialog<List<String>> {
      * Updates ui elements based on current state
      * @param state
      */
-    public void updateUI(LabelPickerState state) {}
+    public void updateUI(LabelPickerState state) {
+        List<String> initialLabels = state.getInitialLabels();
+        List<String> addedLabels = state.getAddedLabels();
+        List<String> removedLabels = state.getRemovedLabels();
+        Optional<String> suggestion = state.getCurrentSuggestion();
+        
+        // Population of UI elements
+        populateAssignedLabels(initialLabels, addedLabels, removedLabels, suggestion);
+    }
 
-    private boolean hasNoLabels(Set<String> initialLabels, 
-                                Set<String> addedLabels)
+    private boolean hasNoLabels(List<String> initialLabels, 
+                                List<String> addedLabels) {
         return initialLabels.isEmpty() && addedLabels.isEmpty();
     }
 
@@ -163,77 +163,49 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         return label;
     }
 
-    public createLabel(String labelName) {
-        // actual name for labels at the top, add tick for selected labels
-        Label label = new Label(labelName);
-        label.getStyleClass().add("labels");
-        if (isRemoved) label.getStyleClass().add("labels-removed"); // add strikethrough
-        String style = getStyle() + (isHighlighted ? " -fx-border-color: black;" : ""); // add highlight border
-        style += (isFaded ? " -fx-opacity: 40%;" : ""); // change opacity if needed
-        label.setStyle(style);
-
-        FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
-        double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
-        label.setPrefWidth(width + 30);
-        label.setText(label.getText() + (!isTop && isSelected ? " ✓" : ""));
-
-        if (getGroup().isPresent()) {
-            Tooltip groupTooltip = new Tooltip(getGroup().get());
-            label.setTooltip(groupTooltip);
-        }
-
-        label.setOnMouseClicked(e -> labelPickerUILogic.toggleLabel(getActualName()));
-        return label;
-    }
-
-    private Label createInitialLabel(String name, Set<String> suggestRemoveLabels) {
-        Label label = new Label(name);
-        label.getStyleClass().add("labels");
-        if (suggestRemoveLabels.contains(name)) {
-            label.getStyleClass().add("labels-removed");
-        }
-    }
-
-    private List<String> populateInitialLabels(Set<String> initialLabels, 
-                                       Set<String> removedLabels) {
-        initialLabels.stream().filter(label -> !removedLabels.contains(label))
-            .map(label -> createInitialLabel(label))
+    private List<Label> populateInitialLabels(List<String> initialLabels, 
+                                               List<String> removedLabels,
+                                               Optional<String> suggestion) {
+        return initialLabels.stream().filter(label -> !removedLabels.contains(label))
+            .map(label -> createSolidLabel(label, suggestion))
             .collect(Collectors.toList());
     }
 
 
-    private void populateAssignedLabels(Set<String> initialLabels, 
-                                        Set<String> addedLabels, 
-                                        Set<String> removedLabels) {
+    // TODO Given added list how to know which one is faded and strike
+    private List<Label> populateAddedLabels(List<String> addedLabels, 
+        Optional<String> suggestion) {
+        List<Label> nextAddedLabels =  addedLabels.stream()
+            .map(label -> createSolidLabel(label, suggestion))
+            .collect(Collectors.toList());
+
+        // Add faded label to indicated suggested but not added 
+        if (suggestion.isPresent() && !nextAddedLabels.contains(suggestion)) {
+           nextAddedLabels.add(createFadedLabel(suggestion.get()));
+        }
+        return nextAddedLabels;
+    }
+
+    private void populateAssignedLabels(List<String> initialLabels, 
+                                        List<String> addedLabels, 
+                                        List<String> removedLabels,
+                                        Optional<String> suggestion) {
         assignedLabels.getChildren().clear();
+        List<Label> nextInitialLabels = populateInitialLabels(initialLabels, 
+                removedLabels, suggestion);
+        List<Label> nextAddedLabels = populateAddedLabels(addedLabels, suggestion);
         if (hasNoLabels(initialLabels, addedLabels)) {
             Label label = createTextLabel("No currently selected labels. ");
             assignedLabels.getChildren().add(label);
         } else {
-            
+            nextInitialLabels.forEach(label -> assignedLabels.getChildren().add(label));
+            if (!nextAddedLabels.isEmpty()) {
+                assignedLabels.getChildren().add(new Label("|"));
+                assignedLabels.getChildren().addAll(nextAddedLabels);
+            }
         } 
         
         
-    }
-
-    protected void populatePanes(List<PickerLabel> existingLabels, List<PickerLabel> newTopLabels,
-            List<PickerLabel> bottomLabels, Map<String, Boolean> groups) {
-        populateTopPane(existingLabels, newTopLabels);
-        populateBottomBox(bottomLabels, groups);
-    }
-
-    private void populateTopPane(List<PickerLabel> existingLabels, List<PickerLabel> newTopLabels) {
-        assignedLabels.getChildren().clear();
-        if (existingLabels.isEmpty() && newTopLabels.isEmpty()) {
-            Label label = createLabel();
-            assignedLabels.getChildren().add(label);
-        } else {
-            existingLabels.forEach(label -> assignedLabels.getChildren().add(label.getNode()));
-            if (!newTopLabels.isEmpty()) {
-                assignedLabels.getChildren().add(new Label("|"));
-                newTopLabels.forEach(label -> assignedLabels.getChildren().add(label.getNode()));
-            }
-        }
     }
 
     private void populateBottomBox(List<PickerLabel> bottomLabels, Map<String, Boolean> groups) {
@@ -275,4 +247,33 @@ public class LabelPickerDialog extends Dialog<List<String>> {
             if (noGroup.getChildren().size() > 0) feedbackLabels.getChildren().add(noGroup);
         }
     }
+
+    // Utility UI methods
+
+    // TODO determine color of label
+    private Label createBasicLabel(String name) {
+        Label label = new Label(name);
+        label.getStyleClass().add("labels");
+        FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
+        double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
+        label.setPrefWidth(width + 30);
+        return label;
+    }
+
+    private Label createFadedLabel(String name) {
+        Label label = createBasicLabel(name);
+        String suggestRemoveStyle = "fx-border-color:black; -fx-opacity:-40; ";
+        label.setStyle(suggestRemoveStyle);
+        return label;
+    }
+
+    private Label createSolidLabel(String name, Optional<String> suggestion) {
+        if (suggestion.isPresent() && suggestion.equals(name)) {
+            Label striked = createFadedLabel(name);
+            striked.getStyleClass().add("labels-removed");
+            return striked;
+        }
+        return createBasicLabel(name);
+    }
+
 }
