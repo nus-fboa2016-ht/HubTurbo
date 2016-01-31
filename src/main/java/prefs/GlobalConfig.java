@@ -30,6 +30,12 @@ public class GlobalConfig {
     private String lastLoginUsername = "";
     private byte[] lastLoginPassword = new byte[0];
     private Optional<String> lastOpenBoard = Optional.empty();
+
+    // Save the panel info of the last opened board, so that we can determine
+    // whether the current opened board is dirty by comparing the saved
+    // panel info and the current panel info.
+    private List<PanelInfo> lastOpenBoardPanelInfo = new ArrayList<>();
+
     private final Map<String, List<PanelInfo>> savedBoards = new LinkedHashMap<>();
     private final Map<String, Map<Integer, LocalDateTime>> markedReadTimes = new HashMap<>();
     private Map<String, String> keyboardShortcuts = new HashMap<>();
@@ -80,6 +86,14 @@ public class GlobalConfig {
 
     public void removeBoard(String name) {
         savedBoards.remove(name);
+    }
+
+    public List<PanelInfo> getLastOpenBoardPanelInfo() {
+        return lastOpenBoardPanelInfo;
+    }
+
+    public void setLastOpenBoardPanelInfo(List<PanelInfo> lastOpenBoardPanelInfo) {
+        this.lastOpenBoardPanelInfo = lastOpenBoardPanelInfo;
     }
     
     public void setLastOpenBoard(String board) {

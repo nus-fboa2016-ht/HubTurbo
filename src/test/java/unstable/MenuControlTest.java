@@ -122,16 +122,25 @@ public class MenuControlTest extends UITest {
         assertEquals(true, saveButton3.isDisabled());
         push(KeyCode.ESCAPE);
 
+        click("Boards");
+        push(KeyCode.DOWN).push(KeyCode.DOWN).push(KeyCode.DOWN);
+        push(KeyCode.RIGHT);
+        push(KeyCode.DOWN);
+        push(KeyCode.ENTER); // Opening Board "1"
+        assertEquals(true, testPref.getLastOpenBoard().isPresent());
+        assertEquals("Board 1", testPref.getLastOpenBoard().get());
+        assertEquals(ui.getTitle(), String.format(uiTitle, "Board 1"));
+        assertEquals(2, panelControl.getPanelCount());
+
         press(CLOSE_PANEL);
-        press(CLOSE_PANEL);
-        press(CLOSE_PANEL);
-        assertEquals(0, panelControl.getPanelCount());
+        assertEquals(1, panelControl.getPanelCount());
 
         // Testing board open
         click("Boards");
         push(KeyCode.DOWN).push(KeyCode.DOWN).push(KeyCode.DOWN);
         push(KeyCode.RIGHT);
         push(KeyCode.ENTER); // Opening Board "2"
+        push(KeyCode.ENTER); // Confirm saving changes
         PlatformEx.waitOnFxThread();
         assertEquals(3, panelControl.getPanelCount());
         assertEquals(ui.getTitle(), String.format(uiTitle, "Board 2"));
@@ -146,13 +155,16 @@ public class MenuControlTest extends UITest {
         assertEquals(true, testPref.getLastOpenBoard().isPresent());
         assertEquals("Board 1", testPref.getLastOpenBoard().get());
         assertEquals(ui.getTitle(), String.format(uiTitle, "Board 1"));
+        assertEquals(1, panelControl.getPanelCount());
         
         // Testing board save
-        press(CLOSE_PANEL);
+        press(CREATE_RIGHT_PANEL);
+        press(CREATE_RIGHT_PANEL);
         click("Boards");
         push(KeyCode.DOWN);
         push(KeyCode.ENTER);
         PlatformEx.waitOnFxThread();
+        assertEquals(3, panelControl.getPanelCount());
         assertEquals(2, panelControl.getNumberOfSavedBoards());
         
         // Testing board delete

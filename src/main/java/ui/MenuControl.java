@@ -129,9 +129,37 @@ public class MenuControl extends MenuBar {
             String boardName = response.get().trim();
             prefs.addBoard(boardName, panelList);
             prefs.setLastOpenBoard(boardName);
+            prefs.setLastOpenBoardPanelInfo(panelList);
             ui.triggerEvent(new BoardSavedEvent());
             logger.info("New board " + boardName + " saved");
             ui.updateTitle();
+        }
+    }
+
+    /**
+     * Prompt use for whether to save the current board panel info or not
+     * when user is closing current board (i.e. switching to another board)
+     *
+     * @param currentPanelInfo
+     * @return true if user choose to save, false if user choose to discard
+     */
+    private boolean promptToSaveCurrentBoard(List<PanelInfo> currentPanelInfo) {
+        List<PanelInfo> lastOpenBoardPanelInfo = prefs.getLastOpenBoardPanelInfo();
+
+        if (!lastOpenBoardPanelInfo.equals(currentPanelInfo)) {
+            ConfirmChangesDialog dlg = new ConfirmChangesDialog(mainStage);
+            Optional<ButtonType> response = dlg.showAndWait();
+            if (response.get() == ButtonType.OK) {
+                onBoardSave();
+                logger.info("Changes to the current board saved.");
+                return true;
+            } else {
+                logger.info("User abandoned unsaved changes.");
+                return false;
+            }
+        } else {
+            // No changes to current board, no need to save.
+            return false;
         }
     }
 
@@ -141,10 +169,21 @@ public class MenuControl extends MenuBar {
     private void onBoardOpen(String boardName, List<PanelInfo> panelInfo) {
         logger.info("Menu: Boards > Open > " + boardName);
 
+        List<PanelInfo> currentPanelInfo = panels.getCurrentPanelInfos();
+        List<PanelInfo> newPanelInfo = panelInfo;
+
+        boolean currentBoardSaved = promptToSaveCurrentBoard(currentPanelInfo);
+
+        if (currentBoardSaved && prefs.getLastOpenBoard().isPresent()
+                && prefs.getLastOpenBoard().get().equals(boardName)) {
+            newPanelInfo = currentPanelInfo;
+        }
+
         panels.closeAllPanels();
-        panels.openPanels(panelInfo);
+        panels.openPanels(newPanelInfo);
         panels.selectFirstPanel();
         prefs.setLastOpenBoard(boardName);
+        prefs.setLastOpenBoardPanelInfo(newPanelInfo);
         ui.updateTitle();
 
         ui.triggerEvent(new UsedReposChangedEvent());

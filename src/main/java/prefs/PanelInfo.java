@@ -23,4 +23,21 @@ public class PanelInfo {
         return this.filter;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PanelInfo panelInfo = (PanelInfo) o;
+
+        if (name != null ? !name.equals(panelInfo.name) : panelInfo.name != null) return false;
+        return filter != null ? filter.equals(panelInfo.filter) : panelInfo.filter == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (filter != null ? filter.hashCode() : 0);
+        return result;
+    }
 }
