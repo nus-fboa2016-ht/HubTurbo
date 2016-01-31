@@ -7,7 +7,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -19,7 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.sun.javafx.tk.FontLoader;
@@ -31,6 +29,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     private static final int ELEMENT_MAX_WIDTH = 108;
     private final LabelPickerUILogic uiLogic;
+    private final List<TurboLabel> repoLabels;
 
     @FXML
     private VBox mainLayout;
@@ -44,6 +43,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private VBox feedbackLabels;
 
     LabelPickerDialog(TurboIssue issue, List<TurboLabel> repoLabels, Stage stage) {
+        this.repoLabels = repoLabels;
         LabelPickerState initialState = new LabelPickerState(new HashSet<String>(issue.getLabels()));
         uiLogic = new LabelPickerUILogic(initialState, 
             repoLabels.stream().map(TurboLabel::getActualName)
@@ -51,6 +51,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
         // UI creation
         initUI(stage, issue);
+        updateUI(initialState);
         setupEvents(stage);
         Platform.runLater(queryField::requestFocus);
     }
@@ -147,7 +148,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         List<String> addedLabels = state.getAddedLabels();
         List<String> removedLabels = state.getRemovedLabels();
         Optional<String> suggestion = state.getCurrentSuggestion();
-        
+       
         // Population of UI elements
         populateAssignedLabels(initialLabels, addedLabels, removedLabels, suggestion);
     }
@@ -250,10 +251,28 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     // Utility UI methods
 
+    private String getColour(String name, List<TurboLabel> repoLabels) {
+        String colour = repoLabels.stream().filter(
+            label -> label.getActualName().equals(name)).findAny().get().getColour();
+        return colour;
+    }
+
+    public String getStyle(String name, List<TurboLabel> repoLabels) {
+        String colour = getColour(name, repoLabels);
+        int r = Integer.parseInt(colour.substring(0, 2), 16);
+        int g = Integer.parseInt(colour.substring(2, 4), 16);
+        int b = Integer.parseInt(colour.substring(4, 6), 16);
+        double luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        boolean bright = luminance > 128;
+        return "-fx-background-color: #" + colour + "; -fx-text-fill: " + (bright ? "black;" : "white;");
+    }
+
+
     // TODO determine color of label
     private Label createBasicLabel(String name) {
         Label label = new Label(name);
         label.getStyleClass().add("labels");
+        label.setStyle(getStyle(name, this.repoLabels));
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
         label.setPrefWidth(width + 30);
