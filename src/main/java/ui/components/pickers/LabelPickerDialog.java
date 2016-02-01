@@ -170,12 +170,11 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     }
 
     private void setupKeyEvents() {
-        queryField.setOnKeyPressed(e -> {
-            if (!e.isAltDown() && !e.isMetaDown() && !e.isControlDown()) {
-                uiLogic.determineState(new LabelPickerState(new HashSet<String>(issue.getLabels())),
-                        repoLabelsString,
-                        queryField.getText().toLowerCase());
-            }
+        queryField.textProperty().addListener((observable, oldValue, newValue) -> {
+            LabelPickerState nextState = uiLogic.determineState(
+                new LabelPickerState(new HashSet<String>(issue.getLabels())),
+                repoLabelsString, queryField.getText().toLowerCase());
+            updateUI(nextState);
         });
     }
 
@@ -193,6 +192,9 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         finalLabels = state.getAssignedLabels();
         Optional<String> suggestion = state.getCurrentSuggestion();
        
+        System.out.println("Matched: " + matchedLabels.toString());
+        System.out.println("Assigned: " + finalLabels.toString());
+
         // Population of UI elements
         populateAssignedLabels(initialLabels, addedLabels, removedLabels, suggestion);
         populateFeedbackLabels(initialLabels, finalLabels, matchedLabels, suggestion);
