@@ -391,7 +391,12 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         return label;
     }
 
-    // TODO determine color of label
+    private void handleClick(String labelName) {
+        // Disable text field upon clicking on a label
+        queryField.setDisable(true);
+    }
+
+    // TODO handling group label text which contains partial name only
     private Label createBasicLabel(String name) {
         Label label = new Label(name);
         label.getStyleClass().add("labels");
@@ -399,7 +404,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
         label.setPrefWidth(width + 30);
-        label.setOnMouseClicked(e -> System.out.println("hello"));
+        label.setOnMouseClicked(e -> handleClick(label.getText()));
         return label;
     }
 
