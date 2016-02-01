@@ -13,14 +13,12 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -192,8 +190,11 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         finalLabels = state.getAssignedLabels();
         Optional<String> suggestion = state.getCurrentSuggestion();
        
+        System.out.println("Initial: " + initialLabels.toString());
+        System.out.println("Added: " + addedLabels.toString());
         System.out.println("Matched: " + matchedLabels.toString());
         System.out.println("Assigned: " + finalLabels.toString());
+        System.out.println("Suggested: " + (suggestion.isPresent() ? suggestion.get() : "no match"));
 
         // Population of UI elements
         populateAssignedLabels(initialLabels, addedLabels, removedLabels, suggestion);
@@ -221,6 +222,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     }
 
 
+    // TODO remove check for existence of label after fixing LabelPickerState
     private Label processAddedLabel(String name, Optional<String> suggestion) {
         Label label = createBasicLabel(name);
         if (suggestion.isPresent() && suggestion.get().equals(label.getText())) {
@@ -232,13 +234,16 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     // TODO Given added list how to know which one is faded and strike
     private List<Label> populateAddedLabels(List<String> addedLabels, 
-        Optional<String> suggestion) {
+                                            List<String> initialLabels, 
+                                            Optional<String> suggestion) {
         List<Label> nextAddedLabels =  addedLabels.stream()
+            .filter(label -> repoLabelsString.contains(label))
             .map(label -> processAddedLabel(label, suggestion))
             .collect(Collectors.toList());
 
         // Faded and striked when already present in addedLabels
-        if (suggestion.isPresent() && !addedLabels.contains(suggestion.get())) {
+        if (suggestion.isPresent() && !addedLabels.contains(suggestion.get())
+            && !initialLabels.contains(suggestion.get())) {
             Label addedLabel = createBasicLabel(suggestion.get());
             setFadedLabel(addedLabel);
             nextAddedLabels.add(addedLabel);
@@ -254,7 +259,8 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         assignedLabels.getChildren().clear();
         List<Label> nextInitialLabels = populateInitialLabels(initialLabels, 
                 removedLabels, suggestion);
-        List<Label> nextAddedLabels = populateAddedLabels(addedLabels, suggestion);
+        List<Label> nextAddedLabels = populateAddedLabels(addedLabels, initialLabels, 
+                                                          suggestion);
         if (hasNoLabels(initialLabels, addedLabels)) {
             Label label = createTextLabel("No currently selected labels. ");
             assignedLabels.getChildren().add(label);
@@ -321,7 +327,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private Label processGroupLabels(TurboLabel label, List<String> matchedLabels,
                                      List<String> assignedLabels, 
                                      Optional<String> suggestion) {
-        Label newLabel = createBasicLabel(label.getActualName());
+        Label newLabel = createGroupLabel(label.getActualName());
         if (matchedLabels.size() > 0 && !matchedLabels.contains(label.getActualName())) {
             setFadedLabel(newLabel);
         }
@@ -329,7 +335,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         if (suggestion.isPresent() && suggestion.get().equals(label.getActualName())) {
             setSuggestedLabel(newLabel);
         }
-        
+
         if (assignedLabels.contains(label.getActualName())) {
             setSelected(newLabel);
         }
@@ -398,8 +404,19 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         queryField.setDisable(true);
     }
 
-    // TODO handling group label text which contains partial name only
     private Label createBasicLabel(String name) {
+        Label label = new Label(name);
+        label.getStyleClass().add("labels");
+        label.setStyle(getStyle(name, this.repoLabels));
+        FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
+        double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
+        label.setPrefWidth(width + 30);
+        label.setOnMouseClicked(e -> handleClick(label.getText()));
+        return label;
+    }
+
+    // TODO handling group label text which contains partial name only
+    private Label createGroupLabel(String name) {
         Label label = new Label(getName(name));
         label.getStyleClass().add("labels");
         label.setStyle(getStyle(name, this.repoLabels));
@@ -410,9 +427,10 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         return label;
     }
 
+    // TODO find a way to increase border-width without breaking the UI
     private void setSuggestedLabel(Label label) {
         String suggestRemoveStyle = label.getStyle() + 
-            "-fx-border-color:black; -fx-border-width:2px; ";
+            "-fx-border-color:black; ";
         label.setStyle(suggestRemoveStyle);
     }
 
