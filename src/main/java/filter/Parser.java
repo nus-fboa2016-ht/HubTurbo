@@ -66,7 +66,7 @@ public final class Parser {
         case QUALIFIER:
             left = parseQualifier(token);
             break;
-        case QUOTE:
+        case QUOTED_CONTENT:
             left = parseQuotedContent(QualifierType.KEYWORD, token);
             break;
         case SYMBOL:
@@ -206,7 +206,7 @@ public final class Parser {
     }
 
     private boolean isQuoteToken(Token token) {
-        return token.getType() == TokenType.QUOTE;
+        return token.getType() == TokenType.QUOTED_CONTENT;
     }
 
     private boolean isRangeOperatorToken(Token token) {
