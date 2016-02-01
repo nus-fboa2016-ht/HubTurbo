@@ -41,6 +41,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private final LabelPickerUILogic uiLogic;
     private final List<TurboLabel> repoLabels;
     private final Set<String> repoLabelsString;
+    private List<String> finalLabels;
     private final Map<String, Boolean> groups;
     private final TurboIssue issue;
 
@@ -122,6 +123,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         }
     }
 
+    // TODO wrap in scrollpane 
     private void createMainLayout() throws IOException {
         FXMLLoader loader = new FXMLLoader(UI.class.getResource("fxml/LabelPickerView.fxml"));
         loader.setController(this);
@@ -145,8 +147,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         // defines what happens when user confirms/presses enter
         setResultConverter(dialogButton -> {
             if (dialogButton == confirmButtonType) {
-                // TODO return assignedLabels from current state
-                return null;
+                return finalLabels;
             }
             return null;
         });
@@ -189,12 +190,12 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         List<String> addedLabels = state.getAddedLabels();
         List<String> removedLabels = state.getRemovedLabels();
         List<String> matchedLabels = state.getMatchedLabels();
-        List<String> assignedLabels = state.getAssignedLabels();
+        finalLabels = state.getAssignedLabels();
         Optional<String> suggestion = state.getCurrentSuggestion();
        
         // Population of UI elements
         populateAssignedLabels(initialLabels, addedLabels, removedLabels, suggestion);
-        populateFeedbackLabels(initialLabels, assignedLabels, matchedLabels, suggestion);
+        populateFeedbackLabels(initialLabels, finalLabels, matchedLabels, suggestion);
     }
 
     private boolean hasNoLabels(List<String> initialLabels, 
@@ -446,7 +447,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     }
 
 
-    public String getName(String actualName) {
+    private String getName(String actualName) {
         if (getDelimiter(actualName).isPresent()) {
             String delimiter = getDelimiter(actualName).get();
             // Escaping due to constants not being valid regexes
@@ -471,7 +472,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         }
     }
 
-    public static Optional<String> getDelimiter(String name) {
+    private Optional<String> getDelimiter(String name) {
 
         // Escaping due to constants not being valid regexes
         Pattern p = Pattern.compile(String.format("^[^\\%s\\%s]+(\\%s|\\%s)",
@@ -487,4 +488,5 @@ public class LabelPickerDialog extends Dialog<List<String>> {
             return Optional.empty();
         }
     }
+    
 }
