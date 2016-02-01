@@ -202,20 +202,29 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     }
 
 
+    private Label processAddedLabel(String name, Optional<String> suggestion) {
+        Label label = createBasicLabel(name);
+        if (suggestion.isPresent() && suggestion.get().equals(label.getText())) {
+            setFadedLabel(label);
+            setStrikedLabel(label);
+        }
+        return label;
+    }
+
     // TODO Given added list how to know which one is faded and strike
     private List<Label> populateAddedLabels(List<String> addedLabels, 
         Optional<String> suggestion) {
         List<Label> nextAddedLabels =  addedLabels.stream()
-            .map(label -> createBasicLabel(label))
+            .map(label -> processAddedLabel(label, suggestion))
             .collect(Collectors.toList());
 
-        // Add faded label to indicated suggested but not added 
-        if (suggestion.isPresent() && !nextAddedLabels.contains(suggestion)) {
-           Label addedLabel = createBasicLabel(suggestion.get());
-           setStrikedLabel(addedLabel);
-           setFadedLabel(addedLabel);
-           nextAddedLabels.add(addedLabel);
+        // Faded and striked when already present in addedLabels
+        if (suggestion.isPresent() && !addedLabels.contains(suggestion.get())) {
+            Label addedLabel = createBasicLabel(suggestion.get());
+            setFadedLabel(addedLabel);
+            nextAddedLabels.add(addedLabel);
         }
+        
         return nextAddedLabels;
     }
 
@@ -253,7 +262,8 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         } else {
             List<String> groupNames = getGroupNames(groups);
             groupNames.forEach(group -> {
-                addGroup(repoLabels, groups, group, matchedLabels);
+                addGroup(repoLabels, groups, group, matchedLabels, assignedLabels,
+                         suggestion);
             });
             addNoGroup(matchedLabels, assignedLabels, suggestion);
         }
@@ -289,10 +299,28 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     }
 
+    private Label processGroupLabels(TurboLabel label, List<String> matchedLabels,
+                                     List<String> assignedLabels, 
+                                     Optional<String> suggestion) {
+        Label newLabel = createBasicLabel(label.getActualName());
+        if (matchedLabels.size() > 0 && !matchedLabels.contains(label.getActualName())) {
+            setFadedLabel(newLabel);
+        }
+
+        if (suggestion.isPresent() && suggestion.get().equals(label.getActualName())) {
+            setSuggestedLabel(newLabel);
+        }
+        
+        if (assignedLabels.contains(label.getActualName())) {
+            setSelected(newLabel);
+        }
+        return newLabel;
+    }
+
     private Label processFeedbackLabel(Label label, List<String> matchedLabels, 
                                        List<String> assignedLabels, 
                                        Optional<String> suggestion) {
-        if (!matchedLabels.contains(label.getText())) {
+        if (matchedLabels.size() > 0 && !matchedLabels.contains(label.getText())) {
             setFadedLabel(label);
         }
 
@@ -303,13 +331,13 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         if (assignedLabels.contains(label.getText())) {
             setSelected(label);
         }
-
         return label;
     }
 
     private void addGroup(List<TurboLabel> repoLabels, 
                           Map<String, Boolean> groups, String group,
-                          List<String> matchedLabels) {
+                          List<String> matchedLabels, List<String> assignedLabels,
+                          Optional<String> suggestion) {
         Label groupName = new Label(group + (groups.get(group) ? "." : "-"));
         groupName.setPadding(new Insets(0, 5, 5, 0));
         groupName.setMaxWidth(ELEMENT_MAX_WIDTH - 10);
@@ -323,7 +351,11 @@ public class LabelPickerDialog extends Dialog<List<String>> {
                 .stream()
                 .filter(label -> label.getGroup().isPresent())
                 .filter(label -> label.getGroup().get().equalsIgnoreCase(group))
-                .forEach(label -> groupPane.getChildren().add(label.getNode()));
+                .map(label -> processGroupLabels(label, matchedLabels, 
+                                                 assignedLabels, suggestion))
+                .forEach(label -> {
+                  groupPane.getChildren().add(label);
+                });
         feedbackLabels.getChildren().addAll(groupName, groupPane);
     }
 
@@ -367,17 +399,19 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
         label.setPrefWidth(width + 30);
-        // label.setOnMouseClicked(e -> uiLogic.getNewState(label.getText()));
+        label.setOnMouseClicked(e -> System.out.println("hello"));
         return label;
     }
 
     private void setSuggestedLabel(Label label) {
-        String suggestRemoveStyle = "-fx-border-color:black; -fx-border-width:2px; ";
+        String suggestRemoveStyle = label.getStyle() + 
+            "-fx-border-color:black; -fx-border-width:2px; ";
         label.setStyle(suggestRemoveStyle);
     }
 
     private void setFadedLabel(Label label) {
-        String suggestRemoveStyle = "-fx-opacity:-40; ";
+        String suggestRemoveStyle = label.getStyle() + 
+            "-fx-opacity: 40%; ";
         label.setStyle(suggestRemoveStyle);
     }
 
