@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.sun.javafx.tk.FontLoader;
@@ -31,7 +33,11 @@ import ui.UI;
 
 public class LabelPickerDialog extends Dialog<List<String>> {
 
-    private static final int ELEMENT_MAX_WIDTH = 108;
+    private static final int VBOX_SPACING = 105;
+    private static final int ELEMENT_MAX_WIDTH = 400;
+    private static final String EXCLUSIVE_DELIMITER = ".";
+    private static final String NONEXCLUSIVE_DELIMITER = "-";
+
     private final LabelPickerUILogic uiLogic;
     private final List<TurboLabel> repoLabels;
     private final Set<String> repoLabelsString;
@@ -100,9 +106,9 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     private void initUI(Stage stage, TurboIssue issue) {
         initialiseDialog(stage, issue);
+        createButtons();
         setDialogPaneContent();
         title.setTooltip(createTitleTooltip(issue));
-        createButtons();
     }
 
     private void setDialogPaneContent() {
@@ -119,6 +125,10 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         FXMLLoader loader = new FXMLLoader(UI.class.getResource("fxml/LabelPickerView.fxml"));
         loader.setController(this);
         mainLayout = (VBox) loader.load();
+        // Auto-resizing
+        mainLayout.heightProperty().addListener((observable, oldValue, newValue) -> {
+            setHeight(newValue.intValue() + VBOX_SPACING); 
+        });
     }
 
     // TODO returns result via showAndWait
@@ -398,7 +408,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     // TODO handling group label text which contains partial name only
     private Label createBasicLabel(String name) {
-        Label label = new Label(name);
+        Label label = new Label(getName(name));
         label.getStyleClass().add("labels");
         label.setStyle(getStyle(name, this.repoLabels));
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
@@ -428,5 +438,47 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         List<String> groupNames = groups.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList());
         Collections.sort(groupNames);
         return groupNames;
+    }
+
+    public String getName(String actualName) {
+        if (getDelimiter(actualName).isPresent()) {
+            String delimiter = getDelimiter(actualName).get();
+            // Escaping due to constants not being valid regexes
+            String[] segments = actualName.split("\\" + delimiter);
+            assert segments.length >= 1;
+            if (segments.length == 1) {
+                if (actualName.endsWith(delimiter)) {
+                    // group.
+                    return "";
+                } else {
+                    // .name
+                    return segments[0];
+                }
+            } else {
+                // group.name
+                assert segments.length == 2;
+                return segments[1];
+            }
+        } else {
+            // name
+            return actualName;
+        }
+    }
+
+    public static Optional<String> getDelimiter(String name) {
+
+        // Escaping due to constants not being valid regexes
+        Pattern p = Pattern.compile(String.format("^[^\\%s\\%s]+(\\%s|\\%s)",
+            EXCLUSIVE_DELIMITER,
+            NONEXCLUSIVE_DELIMITER,
+            EXCLUSIVE_DELIMITER,
+            NONEXCLUSIVE_DELIMITER));
+        Matcher m = p.matcher(name);
+
+        if (m.find()) {
+            return Optional.of(m.group(1));
+        } else {
+            return Optional.empty();
+        }
     }
 }
