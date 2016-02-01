@@ -107,13 +107,14 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private void initUI(Stage stage, TurboIssue issue) {
         initialiseDialog(stage, issue);
         createButtons();
-        setDialogPaneContent();
+        setDialogPaneContent(issue);
         title.setTooltip(createTitleTooltip(issue));
     }
 
-    private void setDialogPaneContent() {
+    private void setDialogPaneContent(TurboIssue issue) {
         try {
             createMainLayout();
+            setTitleLabel(issue);
             getDialogPane().setContent(mainLayout);
         } catch (IOException e) {
             // TODO use a HTLogger instead when failed to load fxml
@@ -129,6 +130,11 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         mainLayout.heightProperty().addListener((observable, oldValue, newValue) -> {
             setHeight(newValue.intValue() + VBOX_SPACING); 
         });
+    }
+
+    private void setTitleLabel(TurboIssue issue) {
+        title.setText((issue.isPullRequest() ? "PR #" : "Issue #") 
+            + issue.getId() + ": " + issue.getTitle());
     }
 
     // TODO returns result via showAndWait
@@ -369,23 +375,6 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         feedbackLabels.getChildren().addAll(groupName, groupPane);
     }
 
-    private String getColour(String name, List<TurboLabel> repoLabels) {
-        String colour = repoLabels.stream().filter(
-            label -> label.getActualName().equals(name)).findAny().get().getColour();
-        return colour;
-    }
-
-    public String getStyle(String name, List<TurboLabel> repoLabels) {
-        String colour = getColour(name, repoLabels);
-        int r = Integer.parseInt(colour.substring(0, 2), 16);
-        int g = Integer.parseInt(colour.substring(2, 4), 16);
-        int b = Integer.parseInt(colour.substring(4, 6), 16);
-        double luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        boolean bright = luminance > 128;
-        return "-fx-background-color: #" + colour + "; -fx-text-fill: " + (bright ? "black;" : "white;");
-    }
-
-
     private Label processInitialLabel(Label label, List<String> removedLabels, 
                                      Optional<String> suggestion) {
         // initial label only faded when it is already removed
@@ -439,6 +428,23 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         Collections.sort(groupNames);
         return groupNames;
     }
+
+    private String getColour(String name, List<TurboLabel> repoLabels) {
+        String colour = repoLabels.stream().filter(
+            label -> label.getActualName().equals(name)).findAny().get().getColour();
+        return colour;
+    }
+
+    private String getStyle(String name, List<TurboLabel> repoLabels) {
+        String colour = getColour(name, repoLabels);
+        int r = Integer.parseInt(colour.substring(0, 2), 16);
+        int g = Integer.parseInt(colour.substring(2, 4), 16);
+        int b = Integer.parseInt(colour.substring(4, 6), 16);
+        double luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        boolean bright = luminance > 128;
+        return "-fx-background-color: #" + colour + "; -fx-text-fill: " + (bright ? "black;" : "white;");
+    }
+
 
     public String getName(String actualName) {
         if (getDelimiter(actualName).isPresent()) {
