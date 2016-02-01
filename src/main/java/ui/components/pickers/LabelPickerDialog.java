@@ -34,7 +34,9 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private static final int ELEMENT_MAX_WIDTH = 108;
     private final LabelPickerUILogic uiLogic;
     private final List<TurboLabel> repoLabels;
+    private final Set<String> repoLabelsString;
     private final Map<String, Boolean> groups;
+    private final TurboIssue issue;
 
     @FXML
     private VBox mainLayout;
@@ -49,10 +51,12 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     LabelPickerDialog(TurboIssue issue, List<TurboLabel> repoLabels, Stage stage) {
         this.repoLabels = repoLabels;
+        this.repoLabelsString = repoLabels.stream()
+                .map(TurboLabel::getActualName)
+                .collect(Collectors.toSet());
+        this.issue = issue;
         LabelPickerState initialState = new LabelPickerState(new HashSet<String>(issue.getLabels()));
-        uiLogic = new LabelPickerUILogic(initialState, 
-            repoLabels.stream().map(TurboLabel::getActualName)
-            .collect(Collectors.toSet()));
+        uiLogic = new LabelPickerUILogic();
 
         // Logic initialisation
         this.groups = initGroups(repoLabels);
@@ -151,7 +155,9 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private void setupKeyEvents() {
         queryField.setOnKeyPressed(e -> {
             if (!e.isAltDown() && !e.isMetaDown() && !e.isControlDown()) {
-                uiLogic.getNewState(e, queryField.getText().toLowerCase());
+                uiLogic.determineState(new LabelPickerState(new HashSet<String>(issue.getLabels())),
+                        repoLabelsString,
+                        queryField.getText().toLowerCase());
             }
         });
     }
