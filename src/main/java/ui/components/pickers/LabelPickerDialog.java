@@ -183,13 +183,19 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     }
 
     private void handleClick(Label label) {
-        System.out.println("click");
         // Disable text field upon clicking on a label
         queryField.setDisable(true);
-        finalLabels = processClickedLabel(label);
+        finalLabels = processClickedLabel(label, label.getText());
         updateUIOnClick();
     }
 
+    // Overloaded to handle clicking on label with delimiter
+    private void handleClick(Label label, String fullName) {
+        // Disable text field upon clicking on a label
+        queryField.setDisable(true);
+        finalLabels = processClickedLabel(label, fullName);
+        updateUIOnClick();
+    }
     // Populate UI elements with LabelPickerState
 
     /**
@@ -311,9 +317,8 @@ public class LabelPickerDialog extends Dialog<List<String>> {
                                         
     // Utility methods
 
-    // TODO refactor multiple ifs
-    private List<String> processClickedLabel(Label label) {
-        String name = label.getText().split(" ")[0];
+    private List<String> processClickedLabel(Label label, String fullName) {
+        String name = fullName.split(" ")[0];
 
         if (addedLabels.contains(name)) {
             addedLabels.remove(name);
@@ -337,7 +342,6 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         }
         
         return finalLabels;
-
     }
 
     // TODO remove side effect
@@ -467,7 +471,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
         label.setPrefWidth(width + 30);
-        label.setOnMouseClicked(e -> handleClick(label));
+        label.setOnMouseClicked(e -> handleClick(label, name));
         return label;
     }
 
