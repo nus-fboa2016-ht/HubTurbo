@@ -39,9 +39,15 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     private final LabelPickerUILogic uiLogic;
     private final List<TurboLabel> repoLabels;
     private final Set<String> repoLabelsString;
-    private List<String> finalLabels;
     private final Map<String, Boolean> groups;
     private final TurboIssue issue;
+    
+    private List<String> initialLabels;
+    private List<String> addedLabels;
+    private List<String> removedLabels;
+    private List<String> matchedLabels;
+    private List<String> finalLabels;
+    
 
     @FXML
     private VBox mainLayout;
@@ -60,7 +66,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
                 .map(TurboLabel::getActualName)
                 .collect(Collectors.toSet());
         this.issue = issue;
-        LabelPickerState initialState = new LabelPickerState(new HashSet<String>(issue.getLabels()));
+        LabelPickerState state = new LabelPickerState(new HashSet<String>(issue.getLabels()));
         uiLogic = new LabelPickerUILogic();
 
         // Logic initialisation
@@ -68,7 +74,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
         // UI creation
         initUI(stage, issue);
-        updateUI(initialState);
+        updateUI(state);
         setupEvents(stage);
         Platform.runLater(queryField::requestFocus);
     }
@@ -169,11 +175,19 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     private void setupKeyEvents() {
         queryField.textProperty().addListener((observable, oldValue, newValue) -> {
-            LabelPickerState nextState = uiLogic.determineState(
+            LabelPickerState state = uiLogic.determineState(
                 new LabelPickerState(new HashSet<String>(issue.getLabels())),
                 repoLabelsString, queryField.getText().toLowerCase());
-            updateUI(nextState);
+            updateUI(state);
         });
+    }
+
+    private void handleClick(Label label) {
+        System.out.println("click");
+        // Disable text field upon clicking on a label
+        queryField.setDisable(true);
+        finalLabels = processClickedLabel(label);
+        updateUIOnClick();
     }
 
     // Populate UI elements with LabelPickerState
@@ -183,22 +197,23 @@ public class LabelPickerDialog extends Dialog<List<String>> {
      * @param state
      */
     public void updateUI(LabelPickerState state) {
-        List<String> initialLabels = state.getInitialLabels();
-        List<String> addedLabels = state.getAddedLabels();
-        List<String> removedLabels = state.getRemovedLabels();
-        List<String> matchedLabels = state.getMatchedLabels();
+        initialLabels = state.getInitialLabels();
+        addedLabels = state.getAddedLabels();
+        removedLabels = state.getRemovedLabels();
+        matchedLabels = state.getMatchedLabels();
         finalLabels = state.getAssignedLabels();
         Optional<String> suggestion = state.getCurrentSuggestion();
        
-        System.out.println("Initial: " + initialLabels.toString());
-        System.out.println("Added: " + addedLabels.toString());
-        System.out.println("Matched: " + matchedLabels.toString());
-        System.out.println("Assigned: " + finalLabels.toString());
-        System.out.println("Suggested: " + (suggestion.isPresent() ? suggestion.get() : "no match"));
-
         // Population of UI elements
         populateAssignedLabels(initialLabels, addedLabels, removedLabels, suggestion);
         populateFeedbackLabels(initialLabels, finalLabels, matchedLabels, suggestion);
+    }
+
+    // Update UI on click
+    public void updateUIOnClick() {
+        // Population of UI elements
+        populateAssignedLabels(initialLabels, addedLabels, removedLabels, Optional.empty());
+        populateFeedbackLabels(initialLabels, finalLabels, matchedLabels, Optional.empty());
     }
 
     private boolean hasNoLabels(List<String> initialLabels, 
@@ -295,6 +310,35 @@ public class LabelPickerDialog extends Dialog<List<String>> {
     }
                                         
     // Utility methods
+
+    // TODO refactor multiple ifs
+    private List<String> processClickedLabel(Label label) {
+        String name = label.getText().split(" ")[0];
+
+        if (addedLabels.contains(name)) {
+            addedLabels.remove(name);
+            return getFinalLabels(initialLabels, addedLabels, removedLabels);
+        }
+
+        if (!initialLabels.contains(name) && !addedLabels.contains(name)) {
+            addedLabels.add(name);
+            return getFinalLabels(initialLabels, addedLabels, removedLabels);
+        }
+
+
+        if (removedLabels.contains(name)) {
+            removedLabels.remove(name);
+            return getFinalLabels(initialLabels, addedLabels, removedLabels);
+        }
+
+        if (initialLabels.contains(name)) {
+            removedLabels.add(name);
+            return getFinalLabels(initialLabels, addedLabels, removedLabels);
+        }
+        
+        return finalLabels;
+
+    }
 
     // TODO remove side effect
     private void setSelected(Label label) {
@@ -396,12 +440,12 @@ public class LabelPickerDialog extends Dialog<List<String>> {
            setStrikedLabel(label);
            setFadedLabel(label); 
         }
-        return label;
-    }
+        
+        if (removedLabels.contains(label.getText())) {
+           setStrikedLabel(label);
+        }
 
-    private void handleClick(String labelName) {
-        // Disable text field upon clicking on a label
-        queryField.setDisable(true);
+        return label;
     }
 
     private Label createBasicLabel(String name) {
@@ -411,7 +455,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
         label.setPrefWidth(width + 30);
-        label.setOnMouseClicked(e -> handleClick(label.getText()));
+        label.setOnMouseClicked(e -> handleClick(label));
         return label;
     }
 
@@ -423,7 +467,7 @@ public class LabelPickerDialog extends Dialog<List<String>> {
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = (double) fontLoader.computeStringWidth(label.getText(), label.getFont());
         label.setPrefWidth(width + 30);
-        label.setOnMouseClicked(e -> handleClick(label.getText()));
+        label.setOnMouseClicked(e -> handleClick(label));
         return label;
     }
 
@@ -442,6 +486,15 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     private void setStrikedLabel(Label label) {
         label.getStyleClass().add("labels-removed");
+    }
+
+    private List<String> getFinalLabels(List<String> initialLabels, 
+                                        List<String> addedLabels, 
+                                        List<String> removedLabels) {
+        return repoLabelsString.stream()
+            .filter(label -> !removedLabels.contains(label))
+            .filter(label -> initialLabels.contains(label) || addedLabels.contains(label))
+            .collect(Collectors.toList());
     }
 
     private List<String> getGroupNames(Map<String, Boolean> groups) {
