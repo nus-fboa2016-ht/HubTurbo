@@ -29,6 +29,11 @@ import com.sun.javafx.tk.Toolkit;
 
 import ui.UI;
 
+/**
+ * A Presenter class to synchronize model and view  after each user action
+ * @author Jin
+ *
+ */
 public class LabelPickerDialog extends Dialog<List<String>> {
 
     private static final int VBOX_SPACING = 105;
@@ -191,8 +196,11 @@ public class LabelPickerDialog extends Dialog<List<String>> {
 
     // Overloaded to handle clicking on label with delimiter
     private void handleClick(Label label, String fullName) {
-        // Disable text field upon clicking on a label
-        queryField.setDisable(true);
+        if (!queryField.isDisabled()) {
+            queryField.clear();
+            matchedLabels.clear();
+            queryField.setDisable(true);
+        }
         finalLabels = processClickedLabel(label, fullName);
         updateUIOnClick();
     }
