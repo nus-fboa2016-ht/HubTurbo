@@ -12,11 +12,11 @@ public class LabelPickerUILogic {
 
     private final TurboIssue issue;
     private final LabelPickerDialog dialog;
-    private List<TurboLabel> allLabels;
+    private final List<TurboLabel> allLabels;
     private final List<PickerLabel> topLabels = new ArrayList<>();
     private List<PickerLabel> bottomLabels;
-    private final Map<String, Boolean> groups = new HashMap<>();
-    private final Map<String, Boolean> resultList = new HashMap<>();
+    private final Map<String, Boolean> groups;
+    private final Map<String, Boolean> resultList;
     private Optional<String> targetLabel = Optional.empty();
 
     // Used for multiple spaces
@@ -26,8 +26,10 @@ public class LabelPickerUILogic {
     LabelPickerUILogic(TurboIssue issue, List<TurboLabel> repoLabels, LabelPickerDialog dialog) {
         this.issue = issue;
         this.dialog = dialog;
-        populateAllLabels(repoLabels);
-        addExistingLabels();
+        this.allLabels = populateAllLabels(repoLabels);
+        this.groups = initializeGroups(repoLabels);
+        this.resultList = initializeResultList(repoLabels);
+        this.topLabels.addAll(determineExistingLabels(issue, allLabels));
         updateBottomLabels("");
         populatePanes();
     }
@@ -35,24 +37,33 @@ public class LabelPickerUILogic {
     public LabelPickerUILogic(TurboIssue issue, List<TurboLabel> repoLabels) {
         this.issue = issue;
         this.dialog = null;
-        populateAllLabels(repoLabels);
-        addExistingLabels();
+        this.allLabels = populateAllLabels(repoLabels);
+        this.groups = initializeGroups(repoLabels);
+        this.resultList = initializeResultList(repoLabels);
+        this.topLabels.addAll(determineExistingLabels(issue, allLabels));
         updateBottomLabels("");
         populatePanes();
     }
 
-    private void populateAllLabels(List<TurboLabel> repoLabels) {
-        this.allLabels = new ArrayList<>(repoLabels);
-        Collections.sort(this.allLabels);
-        // populate resultList by going through repoLabels and seeing which ones currently exist
-        // in issue.getLabels()
-        repoLabels.forEach(label -> {
-            // matching with exact labels so no need to worry about capitalisation
-            resultList.put(label.getActualName(), issue.getLabels().contains(label.getActualName()));
-            if (label.getGroup().isPresent() && !groups.containsKey(label.getGroup().get())) {
-                groups.put(label.getGroup().get(), label.isExclusive());
-            }
-        });
+    private List<TurboLabel> populateAllLabels(List<TurboLabel> repoLabels) {
+        return repoLabels.stream()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, Boolean> initializeGroups(List<TurboLabel> repoLabels) {
+        return repoLabels.stream()
+                .collect(Collectors.toMap(
+                        TurboLabel::getActualName,
+                        label -> issue.getLabels().contains(label.getActualName())));
+    }
+
+    private Map<String, Boolean> initializeResultList(List<TurboLabel> repoLabels) {
+        return repoLabels.stream()
+                .filter(label -> label.getGroup().isPresent() && !groups.containsKey(label.getGroup().get()))
+                .collect(Collectors.toMap(
+                        label -> label.getGroup().get(),
+                        TurboLabel::isExclusive));
     }
 
     private void populatePanes() {
@@ -73,42 +84,47 @@ public class LabelPickerUILogic {
         }
     }
 
-    @SuppressWarnings("PMD")
     public void processTextFieldChange(String text) {
         String[] textArray = text.split(" ");
         if (textArray.length > 0) {
             String query = textArray[textArray.length - 1];
             if (previousNumberOfActions != textArray.length || !query.equals(lastAction)) {
-                previousNumberOfActions = textArray.length;
-                lastAction = query;
-                boolean isBottomLabelsUpdated = false;
-
-                // group check
-                // TODO rewrite this to remove some nesting, and the PMD warning
-                if (TurboLabel.getDelimiter(query).isPresent()) {
-                    String delimiter = TurboLabel.getDelimiter(query).get();
-                    String[] queryArray = query.split(Pattern.quote(delimiter));
-                    if (queryArray.length == 1) {
-                        isBottomLabelsUpdated = true;
-                        updateBottomLabels(queryArray[0], "");
-                    } else if (queryArray.length == 2) {
-                        isBottomLabelsUpdated = true;
-                        updateBottomLabels(queryArray[0], queryArray[1]);
-                    }
-                }
-
-                if (!isBottomLabelsUpdated) {
-                    updateBottomLabels(query);
-                }
-
-                if (hasHighlightedLabel()) {
-                    addRemovePossibleLabel(getHighlightedLabelName().get().getActualName());
-                } else {
-                    addRemovePossibleLabel("");
-                }
-                populatePanes();
+                processUserInput(textArray, query);
             }
         }
+    }
+
+    private void processUserInput(String[] textArray, String query) {
+        previousNumberOfActions = textArray.length;
+        lastAction = query;
+
+        boolean appliedToGroup = applyToGroup(query);
+        if (!appliedToGroup) {
+            updateBottomLabels(query);
+        }
+
+        if (hasHighlightedLabel()) {
+            addRemovePossibleLabel(getHighlightedLabelName().get().getActualName());
+        } else {
+            addRemovePossibleLabel("");
+        }
+
+        populatePanes();
+    }
+
+    private boolean applyToGroup(String query) {
+        if (TurboLabel.getDelimiter(query).isPresent()) {
+            String delimiter = TurboLabel.getDelimiter(query).get();
+            String[] queryArray = query.split(Pattern.quote(delimiter));
+            if (queryArray.length == 1) {
+                updateBottomLabels(queryArray[0], "");
+                return true;
+            } else if (queryArray.length == 2) {
+                updateBottomLabels(queryArray[0], queryArray[1]);
+                return true;
+            }
+        }
+        return false;
     }
 
     /*
@@ -118,11 +134,12 @@ public class LabelPickerUILogic {
     @SuppressWarnings("unused")
     private void ______TOP_PANE______() {}
 
-    private void addExistingLabels() {
+    private List<PickerLabel> determineExistingLabels(TurboIssue issue, List<TurboLabel> allLabels) {
         // used once to populate topLabels at the start
-        allLabels.stream()
+        return allLabels.stream()
                 .filter(label -> issue.getLabels().contains(label.getActualName()))
-                .forEach(label -> topLabels.add(new PickerLabel(label, this, true)));
+                .map(label -> new PickerLabel(label, this, true))
+                .collect(Collectors.toList());
     }
 
     private void preProcessAndUpdateTopLabels(String name) {
@@ -136,45 +153,50 @@ public class LabelPickerUILogic {
                         .stream()
                         .filter(TurboLabel::isExclusive)
                         .filter(label -> label.getGroup().get().equals(group))
-                        .forEach(label -> updateTopLabels(label.getActualName(), false));
-                updateTopLabels(name, true);
+                        .forEach(label -> removeFromTopLabels(label.getActualName()));
+                addToTopLabels(name);
             } else {
-                updateTopLabels(name, !resultList.get(name));
+                if (resultList.get(name)) {
+                    removeFromTopLabels(name);
+                } else {
+                    addToTopLabels(name);
+                }
             }
         }
     }
 
-    private void updateTopLabels(String name, boolean isAdd) {
+    private void addToTopLabels(String name) {
         // adds new labels to the end of the list
-        resultList.put(name, isAdd); // update resultList first
-        if (isAdd) {
-            if (issue.getLabels().contains(name)) {
-                topLabels.stream()
-                        .filter(label -> label.getActualName().equals(name))
-                        .forEach(label -> {
-                            label.setIsRemoved(false);
-                            label.setIsFaded(false);
-                        });
-            } else {
-                allLabels.stream()
-                        .filter(label -> label.getActualName().equals(name))
-                        .filter(label -> resultList.get(label.getActualName()))
-                        .filter(label -> !isInTopLabels(label.getActualName()))
-                        .findFirst()
-                        .ifPresent(label -> topLabels.add(new PickerLabel(label, this, true)));
-            }
-        } else {
+        resultList.put(name, true); // update resultList first
+        if (issue.getLabels().contains(name)) {
             topLabels.stream()
                     .filter(label -> label.getActualName().equals(name))
-                    .findFirst()
-                    .ifPresent(label -> {
-                        if (issue.getLabels().contains(name)) {
-                            label.setIsRemoved(true);
-                        } else {
-                            topLabels.remove(label);
-                        }
+                    .forEach(label -> {
+                        label.setIsRemoved(false);
+                        label.setIsFaded(false);
                     });
+        } else {
+            allLabels.stream()
+                    .filter(label -> label.getActualName().equals(name))
+                    .filter(label -> resultList.get(label.getActualName()))
+                    .filter(label -> !isInTopLabels(label.getActualName()))
+                    .findFirst()
+                    .ifPresent(label -> topLabels.add(new PickerLabel(label, this, true)));
         }
+    }
+
+    private void removeFromTopLabels(String name) {
+        resultList.put(name, false);
+        topLabels.stream()
+                .filter(label -> label.getActualName().equals(name))
+                .findFirst()
+                .ifPresent(label -> {
+                    if (issue.getLabels().contains(name)) {
+                        label.setIsRemoved(true);
+                    } else {
+                        topLabels.remove(label);
+                    }
+                });
     }
 
     private boolean isInTopLabels(String name) {
@@ -186,30 +208,7 @@ public class LabelPickerUILogic {
     }
 
     private void addRemovePossibleLabel(String name) {
-        // Deletes previous selection
-        if (targetLabel.isPresent()) {
-            // if there's a previous possible selection, delete it
-            // targetLabel can be
-            topLabels.stream()
-                    .filter(label -> label.getActualName().equals(targetLabel.get()))
-                    .findFirst()
-                    .ifPresent(label -> {
-                        if (issue.getLabels().contains(targetLabel.get()) || resultList.get(targetLabel.get())) {
-                            // if it is an existing label toggle fade and strike through
-                            label.setIsHighlighted(false);
-                            label.setIsFaded(false);
-                            if (resultList.get(label.getActualName())) {
-                                label.setIsRemoved(false);
-                            } else {
-                                label.setIsRemoved(true);
-                            }
-                        } else {
-                            // if not then remove it
-                            topLabels.remove(label);
-                        }
-                    });
-            targetLabel = Optional.empty();
-        }
+        removePreviousSelection();
 
         if (!name.isEmpty()) {
             // Try to add current selection
@@ -240,6 +239,32 @@ public class LabelPickerUILogic {
                                 new PickerLabel(label, this, false, true, false, true, true)));
             }
             targetLabel = Optional.of(name);
+        }
+    }
+
+    private void removePreviousSelection() {
+        if (targetLabel.isPresent()) {
+            // if there's a previous possible selection, delete it
+            // targetLabel can be
+            topLabels.stream()
+                    .filter(label -> label.getActualName().equals(targetLabel.get()))
+                    .findFirst()
+                    .ifPresent(label -> {
+                        if (issue.getLabels().contains(targetLabel.get()) || resultList.get(targetLabel.get())) {
+                            // if it is an existing label toggle fade and strike through
+                            label.setIsHighlighted(false);
+                            label.setIsFaded(false);
+                            if (resultList.get(label.getActualName())) {
+                                label.setIsRemoved(false);
+                            } else {
+                                label.setIsRemoved(true);
+                            }
+                        } else {
+                            // if not then remove it
+                            topLabels.remove(label);
+                        }
+                    });
+            targetLabel = Optional.empty();
         }
     }
 
@@ -334,13 +359,14 @@ public class LabelPickerUILogic {
                 .collect(Collectors.toList());
 
         // try to highlight labels that begin with match first
-        matches.stream()
+        Optional<PickerLabel> labelStartingWithMatch =  matches.stream()
                 .filter(label -> Utility.startsWithIgnoreCase(label.getName(), match))
-                .findFirst()
-                .ifPresent(label -> label.setIsHighlighted(true));
+                .findFirst();
 
-        // if not then highlight first matching label
-        if (!hasHighlightedLabel()) {
+        if (labelStartingWithMatch.isPresent()) {
+            labelStartingWithMatch.get().setIsHighlighted(true);
+        } else {
+            // if not then highlight first matching label
             matches.stream()
                     .findFirst()
                     .ifPresent(label -> label.setIsHighlighted(true));
