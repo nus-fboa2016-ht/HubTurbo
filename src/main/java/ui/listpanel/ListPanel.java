@@ -29,6 +29,7 @@ import util.GithubPageElements;
 import util.HTLog;
 import util.KeyPress;
 import util.events.IssueSelectedEvent;
+import util.events.ShowAssigneePickerEvent;
 import util.events.ShowLabelPickerEvent;
 import backend.resource.TurboIssue;
 import filter.expression.Qualifier;
@@ -54,6 +55,10 @@ public class ListPanel extends FilterPanel {
 
     private static final MenuItem changeLabelsMenuItem = new MenuItem();
     private static final String changeLabelsMenuItemText = "Change labels (L)";
+
+
+    private static final MenuItem changeAssigneeMenuItem = new MenuItem();
+    private static final String changeAssigneeMenuItemText = "Change Assignee";
 
     public ListPanel(UI ui, GUIController guiController, PanelControl parentPanelControl, int panelIndex) {
         super(ui, guiController, parentPanelControl, panelIndex);
@@ -295,7 +300,13 @@ public class ListPanel extends FilterPanel {
             changeLabels();
         });
 
-        contextMenu.getItems().addAll(markAsReadUnreadMenuItem, changeLabelsMenuItem);
+        changeAssigneeMenuItem.setText(changeAssigneeMenuItemText);
+        changeAssigneeMenuItem.setOnAction( e -> {
+            changeAssignee();
+        });
+
+
+        contextMenu.getItems().addAll(markAsReadUnreadMenuItem, changeLabelsMenuItem, changeAssigneeMenuItem);
         contextMenu.setOnShowing(e -> updateContextMenu(contextMenu));
         listView.setContextMenu(contextMenu);
 
@@ -376,6 +387,12 @@ public class ListPanel extends FilterPanel {
     private void changeLabels() {
         if (getSelectedElement().isPresent()) {
             ui.triggerEvent(new ShowLabelPickerEvent(getSelectedElement().get().getIssue()));
+        }
+    }
+
+    private void changeAssignee() {
+        if (getSelectedElement().isPresent()) {
+            ui.triggerEvent(new ShowAssigneePickerEvent(getSelectedElement().get().getIssue()));
         }
     }
 
