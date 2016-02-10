@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
@@ -25,6 +26,7 @@ import ui.components.IssueListView;
 import ui.components.KeyboardShortcuts;
 import ui.issuepanel.FilterPanel;
 import ui.issuepanel.PanelControl;
+import undo.actions.EditIssueStateAction;
 import util.GithubPageElements;
 import util.HTLog;
 import util.KeyPress;
@@ -54,6 +56,10 @@ public class ListPanel extends FilterPanel {
 
     private static final MenuItem changeLabelsMenuItem = new MenuItem();
     private static final String changeLabelsMenuItemText = "Change labels (L)";
+
+    private final MenuItem closeReopenIssueMenuItem = new MenuItem();
+    private static final String closeIssueMenuItemText = "Close issue (C)";
+    private static final String reopenIssueMenuItemText = "Reopen issue (O)";
 
     public ListPanel(UI ui, GUIController guiController, PanelControl parentPanelControl, int panelIndex) {
         super(ui, guiController, parentPanelControl, panelIndex);
@@ -162,6 +168,12 @@ public class ListPanel extends FilterPanel {
             }
             if (KeyboardShortcuts.markAsUnread.match(event)) {
                 markAsUnread();
+            }
+            if (KeyboardShortcuts.closeIssue.match(event)) {
+                closeIssue();
+            }
+            if (KeyboardShortcuts.reopenIssue.match(event)) {
+                reopenIssue();
             }
             if (SHOW_DOCS.match(event)) {
                 ui.getBrowserComponent().showDocs();
@@ -290,12 +302,22 @@ public class ListPanel extends FilterPanel {
             }
         });
 
+        closeReopenIssueMenuItem.setOnAction(e -> {
+            String menuItemText = closeReopenIssueMenuItem.getText();
+
+            if (menuItemText.equals(closeIssueMenuItemText)) {
+                closeIssue();
+            } else if (menuItemText.equals(reopenIssueMenuItemText)) {
+                reopenIssue();
+            }
+        });
+
         changeLabelsMenuItem.setText(changeLabelsMenuItemText);
         changeLabelsMenuItem.setOnAction(e -> {
             changeLabels();
         });
 
-        contextMenu.getItems().addAll(markAsReadUnreadMenuItem, changeLabelsMenuItem);
+        contextMenu.getItems().addAll(markAsReadUnreadMenuItem, closeReopenIssueMenuItem, changeLabelsMenuItem);
         contextMenu.setOnShowing(e -> updateContextMenu(contextMenu));
         listView.setContextMenu(contextMenu);
 
@@ -304,6 +326,7 @@ public class ListPanel extends FilterPanel {
 
     private ContextMenu updateContextMenu(ContextMenu contextMenu) {
         updateMarkAsReadUnreadMenuItem();
+        updateCloseReopenIssueMenuItem();
         updateChangeLabelsMenuItem();
 
         return contextMenu;
@@ -311,17 +334,6 @@ public class ListPanel extends FilterPanel {
 
     public ContextMenu getContextMenu() {
         return contextMenu;
-    }
-
-    private MenuItem updateChangeLabelsMenuItem() {
-        Optional<GuiElement> item = listView.getSelectedItem();
-        if (item.isPresent()) {
-            changeLabelsMenuItem.setDisable(false);
-        } else {
-            changeLabelsMenuItem.setDisable(true);
-        }
-
-        return changeLabelsMenuItem;
     }
 
     private MenuItem updateMarkAsReadUnreadMenuItem() {
@@ -340,6 +352,35 @@ public class ListPanel extends FilterPanel {
         }
 
         return markAsReadUnreadMenuItem;
+    }
+
+    private MenuItem updateCloseReopenIssueMenuItem() {
+        Optional<GuiElement> item = listView.getSelectedItem();
+        if (item.isPresent()) {
+            closeReopenIssueMenuItem.setDisable(false);
+            TurboIssue selectedIssue = item.get().getIssue();
+
+            if (selectedIssue.isOpen()) {
+                closeReopenIssueMenuItem.setText(closeIssueMenuItemText);
+            } else {
+                closeReopenIssueMenuItem.setText(reopenIssueMenuItemText);
+            }
+        } else {
+            closeReopenIssueMenuItem.setDisable(true);
+        }
+
+        return closeReopenIssueMenuItem;
+    }
+
+    private MenuItem updateChangeLabelsMenuItem() {
+        Optional<GuiElement> item = listView.getSelectedItem();
+        if (item.isPresent()) {
+            changeLabelsMenuItem.setDisable(false);
+        } else {
+            changeLabelsMenuItem.setDisable(true);
+        }
+
+        return changeLabelsMenuItem;
     }
 
     public int getIssueCount() {
@@ -371,6 +412,20 @@ public class ListPanel extends FilterPanel {
 
             parentPanelControl.refresh();
         }
+    }
+
+    private void closeIssue() {
+        getSelectedElement().ifPresent(element -> {
+            ui.undoController.addAction(element.getIssue(),
+                    new EditIssueStateAction(ui.logic, false));
+        });
+    }
+
+    private void reopenIssue() {
+        getSelectedElement().ifPresent(element -> {
+            ui.undoController.addAction(element.getIssue(),
+                    new EditIssueStateAction(ui.logic, true));
+        });
     }
 
     private void changeLabels() {

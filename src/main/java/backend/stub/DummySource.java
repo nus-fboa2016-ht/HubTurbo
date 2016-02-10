@@ -2,10 +2,7 @@ package backend.stub;
 
 import backend.IssueMetadata;
 import backend.UserCredentials;
-import backend.github.CheckRateLimitTask;
-import backend.github.DownloadRepoTask;
-import backend.github.ReplaceIssueLabelsTask;
-import backend.github.UpdateModelTask;
+import backend.github.*;
 import backend.interfaces.RepoSource;
 import backend.resource.Model;
 import backend.resource.TurboIssue;
@@ -51,6 +48,11 @@ public class DummySource extends RepoSource {
     @Override
     public CompletableFuture<List<String>> replaceIssueLabels(TurboIssue issue, List<String> labels) {
         return addTask(new ReplaceIssueLabelsTask(this, dummy, issue.getRepoId(), issue.getId(), labels)).response;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> editIssueState(TurboIssue issue, boolean open) {
+        return addTask(new EditIssueStateTask(this, dummy, issue.getRepoId(), issue.getId(), open)).response;
     }
 
     @Override

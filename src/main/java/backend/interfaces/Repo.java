@@ -41,6 +41,7 @@ public interface Repo {
 
     boolean isRepositoryValid(String repoId);
     List<Label> setLabels(String repoId, int issueId, List<String> labels) throws IOException;
+    boolean editIssueState(String repoId, int issueId, boolean open) throws IOException;
     ImmutablePair<Integer, Long> getRateLimitResetTime() throws IOException;
 
 }

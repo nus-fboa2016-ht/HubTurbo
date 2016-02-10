@@ -17,6 +17,7 @@ import ui.UI;
 import util.events.testevents.ClearLogicModelEvent;
 import util.events.testevents.UpdateDummyRepoEventHandler;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -180,6 +181,11 @@ public class DummyRepo implements Repo {
     @Override
     public List<Label> setLabels(String repoId, int issueId, List<String> labels) {
         return getRepoState(repoId).setLabels(issueId, labels);
+    }
+
+    @Override
+    public boolean editIssueState(String repoId, int issueId, boolean open) throws IOException {
+        return getRepoState(repoId).editIssueState(issueId, open);
     }
 
     @Override

@@ -64,7 +64,12 @@ public class GitHubSource extends RepoSource {
         return addTask(new ReplaceIssueLabelsTask(this, gitHub, issue.getRepoId(), issue.getId(), labels)).response;
     }
 
-@Override
+    @Override
+    public CompletableFuture<Boolean> editIssueState(TurboIssue issue, boolean open) {
+        return addTask(new EditIssueStateTask(this, gitHub, issue.getRepoId(), issue.getId(), open)).response;
+    }
+
+    @Override
     public CompletableFuture<ImmutablePair<Integer, Long>> getRateLimitResetTime() {
         return addTask(new CheckRateLimitTask(this, gitHub)).response;
     }

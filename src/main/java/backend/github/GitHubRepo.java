@@ -260,6 +260,21 @@ public class GitHubRepo implements Repo {
     }
 
     @Override
+    public boolean editIssueState(String repoId, int issueId, boolean open) throws IOException {
+        Issue updatedIssue = issueService.editIssueState(
+                RepositoryId.createFromId(repoId),
+                issueId,
+                open
+        );
+        // Return `true` upon success, or `false` otherwise.
+        if (open) {
+            return updatedIssue.getState().equals(IssueService.STATE_OPEN);
+        } else {
+            return updatedIssue.getState().equals(IssueService.STATE_CLOSED);
+        }
+    }
+
+    @Override
     public boolean isRepositoryValid(String repoId) {
         String repoURL = SEGMENT_REPOS + "/" + repoId;
         try {
