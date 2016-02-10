@@ -31,7 +31,9 @@ import ui.issuepanel.PanelControl;
 import util.GithubPageElements;
 import util.HTLog;
 import util.KeyPress;
-import util.events.*;
+import util.events.IssueSelectedEvent;
+import util.events.ShowAssigneePickerEvent;
+import util.events.ShowLabelPickerEvent;
 import backend.resource.TurboIssue;
 import filter.expression.Qualifier;
 import util.events.ShowMilestonePickerEvent;
@@ -66,6 +68,9 @@ public class ListPanel extends FilterPanel {
 
     private static final MenuItem changeMilestoneMenuItem = new MenuItem();
     private static final String CHANGE_MILESTONE_MENU_ITEM_TEXT = "Change milestone (M)";
+
+    private static final MenuItem changeAssigneeMenuItem = new MenuItem();
+    private static final String changeAssigneeMenuItemText = "Change Assignee";
 
     public ListPanel(UI ui, GUIController guiController, PanelControl parentPanelControl, int panelIndex) {
         super(ui, guiController, parentPanelControl, panelIndex);
@@ -348,6 +353,9 @@ public class ListPanel extends FilterPanel {
         changeMilestoneMenuItem.setText(CHANGE_MILESTONE_MENU_ITEM_TEXT);
         changeMilestoneMenuItem.setOnAction(e -> {
             getSelectedElement().ifPresent(this::changeMilestone);
+        changeAssigneeMenuItem.setText(changeAssigneeMenuItemText);
+        changeAssigneeMenuItem.setOnAction( e -> {
+            changeAssignee();
         });
 
         markAllBelowAsReadMenuItem.setText(MARK_ALL_AS_READ_MENU_ITEM_TEXT);
@@ -362,6 +370,10 @@ public class ListPanel extends FilterPanel {
         
         contextMenu.getItems().addAll(markAsReadUnreadMenuItem, markAllBelowAsReadMenuItem,
                 markAllBelowAsUnreadMenuItem, changeLabelsMenuItem, changeMilestoneMenuItem);
+                                      markAllBelowAsUnreadMenuItem, changeLabelsMenuItem);
+
+
+        contextMenu.getItems().addAll(markAsReadUnreadMenuItem, changeLabelsMenuItem, changeAssigneeMenuItem);
         contextMenu.setOnShowing(e -> updateContextMenu(contextMenu));
         listView.setContextMenu(contextMenu);
 
@@ -480,6 +492,12 @@ public class ListPanel extends FilterPanel {
 
     private void changeMilestone(GuiElement issueGuiElement) {
         ui.triggerEvent(new ShowMilestonePickerEvent(issueGuiElement.getIssue()));
+    }
+
+    private void changeAssignee() {
+        if (getSelectedElement().isPresent()) {
+            ui.triggerEvent(new ShowAssigneePickerEvent(getSelectedElement().get().getIssue()));
+        }
     }
 
     @Override
