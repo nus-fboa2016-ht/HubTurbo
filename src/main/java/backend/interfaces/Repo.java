@@ -10,8 +10,10 @@ import github.TurboIssueEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.eclipse.egit.github.core.Comment;
+import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.PullRequest;
+import org.eclipse.egit.github.core.User;
 
 import java.io.IOException;
 import java.util.Date;
@@ -41,6 +43,7 @@ public interface Repo {
 
     boolean isRepositoryValid(String repoId);
     List<Label> setLabels(String repoId, int issueId, List<String> labels) throws IOException;
+    Issue setAssignee(String repoId, int issueId, String issueTitle, String issueAssigneeLoginName) throws IOException;
     ImmutablePair<Integer, Long> getRateLimitResetTime() throws IOException;
 
 }

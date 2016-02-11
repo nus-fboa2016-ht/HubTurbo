@@ -9,6 +9,7 @@ import backend.resource.TurboIssue;
 import backend.resource.serialization.SerializableModel;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.egit.github.core.Issue;
 import ui.UI;
 import util.HTLog;
 import util.events.ShowErrorDialogEvent;
@@ -162,6 +163,10 @@ public class RepoIO {
 
     public CompletableFuture<List<String>> replaceIssueLabels(TurboIssue issue, List<String> labels) {
         return repoSource.replaceIssueLabels(issue, labels);
+    }
+
+    public CompletableFuture<Issue> replaceIssueAssignee(TurboIssue issue, String assigneeLoginName) {
+        return repoSource.replaceIssueAssignee(issue, assigneeLoginName);
     }
 
     public CompletableFuture<ImmutablePair<Integer, Long>> getRateLimitResetTime() {

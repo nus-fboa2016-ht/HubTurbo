@@ -215,6 +215,19 @@ public class Logic {
                 .exceptionally(Futures.withResult(false));
     }
 
+    public CompletableFuture<Boolean> replaceIssueAssignee(TurboIssue issue, String assigneeLoginName){
+        logger.info("Changing assignee for " + issue + " on GitHub");
+        return repoIO.replaceIssueAssignee(issue, assigneeLoginName)
+                .thenApply(resultingIssue -> {
+                    logger.info("Changing labels for " + issue + " on UI");
+                    //TODO yy supposed to be a string here - integer or string as assignee??
+                    issue.setAssignee(assigneeLoginName);
+                    refreshUI();
+                    return true;
+                })
+                .exceptionally(Futures.withResult(false));
+    }
+
     /**
      * Determines data to be sent to the GUI to refresh the entire GUI with the current model in Logic,
      * and then sends the data to the GUI.
