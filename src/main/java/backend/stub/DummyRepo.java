@@ -186,6 +186,9 @@ public class DummyRepo implements Repo {
         Issue returnedIssue = getRepoState(repoId).setMilestone(issueId, issueMilestone);
         if (returnedIssue.getMilestone() == null) return Optional.empty();
         return Optional.of(returnedIssue.getMilestone().getNumber());
+
+    public Issue setAssignee(String repoId, int issueId, String issueTitle, String issueAssigneeLoginName) {
+        return getRepoState(repoId).setAssignee(issueId, issueAssigneeLoginName);
     }
 
     @Override

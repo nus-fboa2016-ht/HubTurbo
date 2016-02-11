@@ -13,6 +13,7 @@ import org.eclipse.egit.github.core.Comment;
 import org.eclipse.egit.github.core.Issue;
 import org.eclipse.egit.github.core.Label;
 import org.eclipse.egit.github.core.PullRequest;
+import org.eclipse.egit.github.core.User;
 
 import java.io.IOException;
 import java.util.Date;
@@ -46,6 +47,7 @@ public interface Repo {
 
     Optional<Integer> setMilestone(String repoId, int issueId, String issueTitle, Optional<Integer> issueMilestone)
             throws IOException;
+    Issue setAssignee(String repoId, int issueId, String issueTitle, String issueAssigneeLoginName) throws IOException;
     ImmutablePair<Integer, Long> getRateLimitResetTime() throws IOException;
 
 }

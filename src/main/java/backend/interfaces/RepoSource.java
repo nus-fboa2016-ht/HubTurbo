@@ -48,6 +48,8 @@ public abstract class RepoSource implements TaskRunner {
 
     public abstract CompletableFuture<Boolean> replaceIssueMilestone(TurboIssue issue, Optional<Integer> milestone);
 
+    public abstract CompletableFuture<Issue> replaceIssueAssignee(TurboIssue issue, String assignee);
+
     public abstract CompletableFuture<ImmutablePair<Integer, Long>> getRateLimitResetTime();
 
 }

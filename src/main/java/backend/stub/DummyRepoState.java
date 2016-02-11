@@ -10,6 +10,10 @@ import github.TurboIssueEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.eclipse.egit.github.core.*;
+import org.eclipse.egit.github.core.Comment;
+import org.eclipse.egit.github.core.Issue;
+import org.eclipse.egit.github.core.Label;
+import org.eclipse.egit.github.core.User;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -428,6 +432,9 @@ public class DummyRepoState {
             newIssue.setMilestone(new Milestone().setNumber(milestone.get()));
         }
         return newIssue;
+
+    protected final Issue setAssignee(int issueId, String issueAssigneeLoginName) {
+        return null;
     }
 
     protected TurboIssue commentOnIssue(String author, String commentText, int issueId) {

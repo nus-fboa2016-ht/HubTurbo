@@ -376,6 +376,19 @@ public class Logic {
         }
     }
 
+    public CompletableFuture<Boolean> replaceIssueAssignee(TurboIssue issue, String assigneeLoginName){
+        logger.info("Changing assignee for " + issue + " on GitHub");
+        return repoIO.replaceIssueAssignee(issue, assigneeLoginName)
+                .thenApply(resultingIssue -> {
+                    logger.info("Changing labels for " + issue + " on UI");
+                    //TODO yy supposed to be a string here - integer or string as assignee??
+                    issue.setAssignee(assigneeLoginName);
+                    refreshUI();
+                    return true;
+                })
+                .exceptionally(Futures.withResult(false));
+    }
+
     /**
      * Replaces the milestone of the issue in the {@link Logic#models} corresponding to {@code originalIssue}
      * with originalIssue's milestone if both issues have the same last modified LocalDateTime

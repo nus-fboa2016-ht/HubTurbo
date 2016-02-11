@@ -205,6 +205,9 @@ public class RepoIO {
 
     public CompletableFuture<Boolean> replaceIssueMilestone(TurboIssue issue, Optional<Integer> milestone) {
         return repoSource.replaceIssueMilestone(issue, milestone);
+
+    public CompletableFuture<Issue> replaceIssueAssignee(TurboIssue issue, String assigneeLoginName) {
+        return repoSource.replaceIssueAssignee(issue, assigneeLoginName);
     }
 
     public CompletableFuture<ImmutablePair<Integer, Long>> getRateLimitResetTime() {
