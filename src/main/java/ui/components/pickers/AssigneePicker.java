@@ -28,12 +28,8 @@ public class AssigneePicker {
         AssigneePickerDialog assigneePickerDialog = new AssigneePickerDialog(stage, issue, assigneeList);
         Optional<String> assignedAssignee = assigneePickerDialog.showAndWait();
 
-
         if (!issue.getAssignee().equals(assignedAssignee)) {
-
-            //TODO yy expects an integer assignee id
             ui.undoController.addAction(issue, new ChangeAssigneeAction(ui.logic, issue.getAssignee(), assignedAssignee));
-            //ui.undoController.addAction(issue, new ChangeAssigneeAction(ui.logic, Optional.of(111), Optional.of(222)));
         }
     }
 }
