@@ -406,7 +406,7 @@ public class TurboIssue {
     }
 
     public void setAssignee(String assignee) {
-        this.assignee = Optional.of(assignee);
+        this.assignee = Optional.ofNullable(assignee);
     }
 
     public void setAssignee(TurboUser assignee) {
