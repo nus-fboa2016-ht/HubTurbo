@@ -11,8 +11,12 @@ public class AssigneePickerState {
 
     public AssigneePickerState(List<PickerAssignee> assignees) {
         originalAssigneesList = assignees;
-        //TODO yy not sure if this works
         currentAssigneesList = new ArrayList<>(originalAssigneesList);
+    }
+
+    public AssigneePickerState(List<PickerAssignee> assignees, String userInput) {
+        this(assignees);
+        processInput(userInput);
     }
 
     public void processInput(String userInput) {
@@ -20,7 +24,6 @@ public class AssigneePickerState {
             return;
         }
 
-        //TODO yy change the " "
         String[] userInputWords = userInput.split(" ");
         for (int i = 0; i < userInputWords.length; i++) {
             String currentWord = userInputWords[i];
@@ -34,7 +37,7 @@ public class AssigneePickerState {
 
     public void toggleAssignee(String assigneeQuery) {
         String assigneeName = getAssigneeName(assigneeQuery);
-        if(assigneeName == null) return;
+        if (assigneeName == null) return;
         currentAssigneesList.stream()
                 .forEach(assignee -> {
                     assignee.setSelected(assignee.getLoginName().equals(assigneeName)
@@ -73,12 +76,11 @@ public class AssigneePickerState {
     }
 
     private String getAssigneeName(String query) {
-        if(hasExactlyOneMatchingAssignee(currentAssigneesList, query)){
+        if (hasExactlyOneMatchingAssignee(currentAssigneesList, query)) {
             return getMatchingAssigneeName(currentAssigneesList, query);
         }
         return null;
     }
-
 
     private boolean hasExactlyOneMatchingAssignee(List<PickerAssignee> assigneeList, String query) {
         return assigneeList.stream()

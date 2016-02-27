@@ -2,172 +2,95 @@ package ui.components.pickers;
 
 import backend.resource.TurboIssue;
 import backend.resource.TurboUser;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class AssigneePickerDialog extends Dialog<String> {
+public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
     public static final String DIALOG_TITLE = "Select Assignee";
-    private final List<PickerAssignee> assignees = new ArrayList<>();
+    private static final String ASSIGNED_ASSIGNEE = "Assigned Assignee";
+    private static final String ALL_ASSIGNEES = "All Assignees";
+
+    private final List<PickerAssignee> originalAssignees = new ArrayList<>();
     private VBox assigneeBox;
+    FlowPane allAssigneesPane, assignedAssigneePane;
+    private TextField textField;
+    private AssigneePickerState state;
 
     public AssigneePickerDialog(Stage stage, TurboIssue issue, List<TurboUser> assignees) {
         initOwner(stage);
         setTitle(DIALOG_TITLE);
         setupButtons(getDialogPane());
-        convertToPickerAssignees(issue, assignees);
-        refreshUI();
-        setupKeyEvents(getDialogPane());
+        originalAssignees.addAll(convertToPickerAssignees(issue, assignees));
+        state = new AssigneePickerState(originalAssignees);
+        initUI();
+        setupKeyEvents();
     }
 
-    private void setupKeyEvents(Node assigneeDialogPane) {
-        assigneeDialogPane.setOnKeyPressed((event) -> {
-            if (event.getCode() == KeyCode.RIGHT) {
-                highlightNextAssignee(this.assignees);
-                event.consume();
-            }
-            if (event.getCode() == KeyCode.LEFT) {
-                highlightPreviousAssignee(this.assignees);
-                event.consume();
-            }
-            if (event.getCode() == KeyCode.DOWN) {
-                selectAssignee(this.assignees);
-            }
-            if (event.getCode() == KeyCode.UP) {
-                unselectAssignee(this.assignees);
-            }
-            refreshUI();
+    private void handleMouseClick(String assigneeName) {
+        // required since clearing inputField will change the reference to the state
+        AssigneePickerState curState = state;
+        textField.clear();
+        textField.setDisable(true);
+        curState.toggleAssignee(assigneeName);
+        state = curState;
+        refreshUI(state);
+    }
+
+    private void setupKeyEvents() {
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            handleUpdatedInput(newValue);
         });
     }
 
-    private void selectAssignee(List<PickerAssignee> assignees) {
-        if (!hasHighlightedAssignee(assignees)) return;
-
-        PickerAssignee highlightedAssignee = getHighlightedAssignee(assignees);
-
-        assignees.stream()
-                .forEach(assignee -> {
-                    assignee.setSelected(assignee == highlightedAssignee);
-                });
+    private void handleUpdatedInput(String userInput) {
+        state = new AssigneePickerState(originalAssignees, userInput);
+        refreshUI(state);
     }
 
-    private boolean hasHighlightedAssignee(List<PickerAssignee> assignees) {
-        return assignees.stream()
+    private boolean hasHighlightedAssignee(List<PickerAssignee> assigneeList) {
+        return assigneeList.stream()
                 .filter(assignee -> assignee.isHighlighted())
                 .findAny()
                 .isPresent();
     }
 
-    private void unselectAssignee(List<PickerAssignee> assignees) {
-        if (!hasHighlightedAssignee(assignees)) return;
-
-        PickerAssignee highlightedAssignee = getHighlightedAssignee(assignees);
-
-        assignees.stream()
-                .forEach(assignee -> {
-                    assignee.setSelected((assignee == highlightedAssignee) ? false : assignee.isSelected());
-                });
-    }
-
-    private PickerAssignee getHighlightedAssignee(List<PickerAssignee> assignees) {
-        return assignees.stream()
-                .filter(assignee -> assignee.isHighlighted())
-                .findAny()
-                .get();
-    }
-
-    private void highlightNextAssignee(List<PickerAssignee> assignees) {
-        if (assignees.isEmpty()) return;
-
-        PickerAssignee curAssignee = getHighlightedAssignee(assignees);
-        int curAssigneeIndex = assignees.indexOf(curAssignee);
-        PickerAssignee nextAssignee = getNextAssignee(assignees, curAssigneeIndex);
-        nextAssignee.setHighlighted(true);
-        curAssignee.setHighlighted(false);
-    }
-
-    private PickerAssignee getNextAssignee(List<PickerAssignee> assignees, int curAssigneeIndex) {
-        return (curAssigneeIndex < assignees.size() - 1)
-                ? assignees.get(curAssigneeIndex + 1)
-                : assignees.get(0);
-    }
-
-    private void highlightPreviousAssignee(List<PickerAssignee> assignees) {
-        if (assignees.isEmpty()) return;
-
-        PickerAssignee curAssignee = getHighlightedAssignee(assignees);
-        int curAssigneeIndex = assignees.indexOf(curAssignee);
-        PickerAssignee nextAssignee = getPreviousAssignee(assignees, curAssigneeIndex);
-        nextAssignee.setHighlighted(true);
-        curAssignee.setHighlighted(false);
-    }
-
-    private PickerAssignee getPreviousAssignee(List<PickerAssignee> assignees, int curAssigneeIndex) {
-        return (curAssigneeIndex > 0)
-                ? assignees.get(curAssigneeIndex - 1)
-                : assignees.get(assignees.size() - 1);
-    }
-
-    private void convertToPickerAssignees(TurboIssue issue, List<TurboUser> assignees) {
+    private List<PickerAssignee> convertToPickerAssignees(TurboIssue issue, List<TurboUser> assignees) {
+        List<PickerAssignee> originalAssignees = new ArrayList<>();
         for (int i = 0; i < assignees.size(); i++) {
-            this.assignees.add(new PickerAssignee(assignees.get(i), this));
+            PickerAssignee convertedAssignee = new PickerAssignee(assignees.get(i));
+            if (isExistingAssignee(issue, convertedAssignee)) {
+                convertedAssignee.setExisting(true);
+            }
+            originalAssignees.add(convertedAssignee);
         }
 
-        //TODO yy implement comparable for sorting
-        //Collections.sort(this.assignees);
-        selectAssignedAssignee(issue);
+        Collections.sort(originalAssignees);
+        selectAssignedAssignee(originalAssignees, issue);
 
-        if (hasSelectedAssignee()) {
-            highlightSelectedAssignee();
+        return originalAssignees;
+    }
+
+    private boolean isExistingAssignee(TurboIssue issue, PickerAssignee assignee) {
+        if (issue.getAssignee().isPresent()) {
+            return issue.getAssignee().get().equals(assignee.getLoginName());
         } else {
-            highlightFirstAssignee();
+            return false;
         }
     }
 
-    private void highlightFirstAssignee() {
-        if (!this.assignees.isEmpty()) {
-            this.assignees.get(0).setHighlighted(true);
-        }
-    }
-
-    private void highlightSelectedAssignee() {
-        this.assignees.stream()
-                .filter(assignee -> assignee.isSelected())
-                .findAny()
-                .get()
-                .setHighlighted(true);
-    }
-
-    private boolean hasSelectedAssignee() {
-        return this.assignees.stream()
-                .filter(assignee -> assignee.isSelected())
-                .findAny()
-                .isPresent();
-    }
-
-    private PickerAssignee getSelectedAssignee() {
-        return this.assignees.stream()
-                .filter(assignee -> assignee.isSelected())
-                .findAny()
-                .get();
-    }
-
-    private void selectAssignedAssignee(TurboIssue issue) {
-        this.assignees.stream()
-                .filter(assignee -> {
-                    if (issue.getAssignee().isPresent()) {
-                        return issue.getAssignee().get() == assignee.getLoginName();
-                    } else {
-                        return false;
-                    }
-                })
+    private void selectAssignedAssignee(List<PickerAssignee> assigneeList, TurboIssue issue) {
+        assigneeList.stream()
+                .filter(assignee -> isExistingAssignee(issue, assignee))
                 .forEach(assignee -> assignee.setSelected(true));
     }
 
@@ -180,32 +103,107 @@ public class AssigneePickerDialog extends Dialog<String> {
 
     private void setConfirmResultConverter(ButtonType confirmButtonType) {
         setResultConverter((dialogButton) -> {
-            if (dialogButton == confirmButtonType && hasSelectedAssignee()) {
-
-                //TODO yy need a integer value instead of string
-                return getSelectedAssignee().getLoginName();
-                //return 111;
+            List<PickerAssignee> finalList = state.getCurrentAssigneesList();
+            if (hasSelectedAssignee(finalList)) {
+                return new Pair<>(dialogButton, getSelectedAssignee(finalList).getLoginName());
             } else {
-                return null;
+                return new Pair<>(dialogButton, null);
             }
         });
     }
 
-    private void refreshUI() {
+    private void initUI() {
         assigneeBox = new VBox();
+        assignedAssigneePane = createAssigneeGroup();
+        allAssigneesPane = createAssigneeGroup();
+        textField = new TextField();
 
-        FlowPane assigneeFlowPlane = createAssigneeGroup();
-        populateAssignee(assignees, assigneeFlowPlane);
-
-        assigneeBox.getChildren().add(new Label("Assignees"));
-        assigneeBox.getChildren().add(assigneeFlowPlane);
+        assigneeBox.getChildren().add(new Label(ASSIGNED_ASSIGNEE));
+        assigneeBox.getChildren().add(assignedAssigneePane);
+        assigneeBox.getChildren().add(new Label(ALL_ASSIGNEES));
+        assigneeBox.getChildren().add(allAssigneesPane);
+        assigneeBox.getChildren().add(textField);
 
         getDialogPane().setContent(assigneeBox);
+        Platform.runLater(textField::requestFocus);
+        refreshUI(state);
     }
 
-    private void populateAssignee(List<PickerAssignee> pickerAssigneesList, FlowPane assigneeFlowPane) {
-        pickerAssigneesList.stream()
-                .forEach(assignee -> assigneeFlowPane.getChildren().add(assignee.getNode()));
+    private void refreshUI(AssigneePickerState state) {
+        List<PickerAssignee> assigneesToDisplay = state.getCurrentAssigneesList();
+        populateAssignedAssignee(assigneesToDisplay, assignedAssigneePane);
+        populateAllAssignees(assigneesToDisplay, allAssigneesPane);
+    }
+
+    private void populateAssignedAssignee(List<PickerAssignee> assigneeList, FlowPane assignedAssigneeStatus) {
+        assignedAssigneeStatus.getChildren().clear();
+        boolean hasSuggestion = hasHighlightedAssignee(assigneeList);
+
+        updateExistingAssignee(assigneeList, assignedAssigneeStatus, hasSuggestion);
+        addSeparator(assignedAssigneeStatus);
+        updateNewlyAddedAssignee(assigneeList, assignedAssigneeStatus, hasSuggestion);
+        updateSuggestedAssignee(assigneeList, assignedAssigneeStatus, hasSuggestion);
+    }
+
+    private void addSeparator(FlowPane assignedAssigneeStatus) {
+        assignedAssigneeStatus.getChildren().add(new Label("|"));
+    }
+
+    private void updateSuggestedAssignee(List<PickerAssignee> assigneeList,
+                                         FlowPane assignedAssigneeStatus, boolean hasSuggestion) {
+        assigneeList.stream()
+                .filter(assignee -> !assignee.isExisting() && assignee.isHighlighted() && !assignee.isSelected())
+                .forEach(assignee -> assignedAssigneeStatus.getChildren().add(
+                        setMouseClickForNode(assignee.getNewlyAssignedAssigneeNode(hasSuggestion),
+                                assignee.getLoginName())
+                ));
+    }
+
+    private void updateNewlyAddedAssignee(List<PickerAssignee> assigneeList,
+                                           FlowPane assignedAssigneeStatus, boolean hasSuggestion) {
+        assigneeList.stream()
+                .filter(assignee -> assignee.isSelected() && !assignee.isExisting())
+                .forEach(assignee -> assignedAssigneeStatus.getChildren().add(
+                        setMouseClickForNode(assignee.getNewlyAssignedAssigneeNode(hasSuggestion),
+                                assignee.getLoginName())
+                ));
+    }
+
+    private void updateExistingAssignee(List<PickerAssignee> assigneeList,
+                                   FlowPane assignedAssigneeStatus, boolean hasSuggestion) {
+        if (hasExistingAssignee(assigneeList)) {
+            PickerAssignee existingAssignee = getExistingAssignee(assigneeList);
+
+            Node existingAssigneeNode = setMouseClickForNode(existingAssignee.getExistingAssigneeNode(hasSuggestion),
+                    existingAssignee.getLoginName());
+            assignedAssigneeStatus.getChildren().add(existingAssigneeNode);
+        }
+    }
+
+    private boolean hasExistingAssignee(List<PickerAssignee> assigneeList) {
+        return assigneeList.stream()
+                .filter(assignee -> assignee.isExisting())
+                .findAny()
+                .isPresent();
+    }
+
+    private PickerAssignee getExistingAssignee(List<PickerAssignee> assigneeList) {
+        return assigneeList.stream()
+                .filter(assignee -> assignee.isExisting())
+                .findAny()
+                .get();
+    }
+
+    private void populateAllAssignees(List<PickerAssignee> assigneeList, FlowPane allAssigneesPane) {
+        allAssigneesPane.getChildren().clear();
+        assigneeList.stream()
+                .forEach(assignee -> allAssigneesPane.getChildren().add(setMouseClickForNode(assignee.getNode(),
+                        assignee.getLoginName())));
+    }
+
+    private Node setMouseClickForNode(Node node, String assigneeName) {
+        node.setOnMouseClicked(e -> handleMouseClick(assigneeName));
+        return node;
     }
 
     private FlowPane createAssigneeGroup() {
@@ -217,12 +215,17 @@ public class AssigneePickerDialog extends Dialog<String> {
         return assigneeGroup;
     }
 
-    public void toggleAssignee(String assigneeName) {
-        this.assignees.stream()
-                .forEach(assignee -> {
-                    assignee.setSelected(assignee.getLoginName().equals(assigneeName)
-                            && !assignee.isSelected());
-                });
-        refreshUI();
+    private boolean hasSelectedAssignee(List<PickerAssignee> assigneeList) {
+        return assigneeList.stream()
+                .filter(assignee -> assignee.isSelected())
+                .findAny()
+                .isPresent();
+    }
+
+    private PickerAssignee getSelectedAssignee(List<PickerAssignee> assigneeList) {
+        return assigneeList.stream()
+                .filter(assignee -> assignee.isSelected())
+                .findAny()
+                .get();
     }
 }
