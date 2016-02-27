@@ -354,7 +354,7 @@ public class ListPanel extends FilterPanel {
         changeMilestoneMenuItem.setOnAction(e -> {
             getSelectedElement().ifPresent(this::changeMilestone);
         changeAssigneeMenuItem.setText(changeAssigneeMenuItemText);
-        changeAssigneeMenuItem.setOnAction( e -> {
+        changeAssigneeMenuItem.setOnAction(e -> {
             changeAssignee();
         });
 
