@@ -380,8 +380,7 @@ public class Logic {
         logger.info("Changing assignee for " + issue + " on GitHub");
         return repoIO.replaceIssueAssignee(issue, assigneeLoginName)
                 .thenApply(resultingIssue -> {
-                    logger.info("Changing labels for " + issue + " on UI");
-                    //TODO yy supposed to be a string here - integer or string as assignee??
+                    logger.info("Changing assignee for " + issue + " on UI");
                     issue.setAssignee(assigneeLoginName);
                     refreshUI();
                     return true;
