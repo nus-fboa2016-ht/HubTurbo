@@ -64,9 +64,10 @@ public class BoardTests extends UITest {
         assertEquals(3, panelControl.getPanelCount());
         clickMenu("Boards", "Save as");
         click("OK");
-        click("No");
-        click("Cancel");
+        click("No"); // Do not overwrite
+        click("Cancel"); // Cancel "Save as"
         clickMenu("Boards", "Open", "New Board");
+        click("No"); // Abort unsaved changes
         assertEquals(2, panelControl.getPanelCount());
     }
 }
