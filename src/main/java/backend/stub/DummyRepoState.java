@@ -9,9 +9,7 @@ import github.IssueEventType;
 import github.TurboIssueEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.eclipse.egit.github.core.Comment;
-import org.eclipse.egit.github.core.Label;
-import org.eclipse.egit.github.core.User;
+import org.eclipse.egit.github.core.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -385,6 +383,32 @@ public class DummyRepoState {
         markUpdatedEvents(toSet, IssueMetadata.intermediate(eventsOfIssue, metadataOfIssue.getComments(), "", ""));
 
         return newLabels.stream().map(new Label()::setName).collect(Collectors.toList());
+    }
+
+    protected final Issue setMilestone(int issueId, Integer milestone) {
+        ImmutablePair<TurboIssue, IssueMetadata> mutables = produceMutables(issueId);
+        TurboIssue toSet = mutables.getLeft();
+        IssueMetadata metadataOfIssue = mutables.getRight();
+        List<TurboIssueEvent> eventsOfIssue = metadataOfIssue.getEvents();
+
+        if (toSet.getMilestone().isPresent()) {
+            int milestoneOfIssue = toSet.getMilestone().get();
+            eventsOfIssue.add(new TurboIssueEvent(new User().setLogin("test"),
+                    IssueEventType.Demilestoned,
+                    new Date()).setMilestoneTitle(milestones.get(milestoneOfIssue).getTitle()));
+        }
+
+        eventsOfIssue.add(new TurboIssueEvent(new User().setLogin("test"),
+                IssueEventType.Milestoned,
+                new Date()).setMilestoneTitle(milestones.get(milestone).getTitle()));
+        toSet.setMilestoneById(milestone);
+        toSet.setUpdatedAt(LocalDateTime.now());
+
+        markUpdatedEvents(toSet, IssueMetadata.intermediate(eventsOfIssue, metadataOfIssue.getComments(), "", ""));
+
+        Issue newIssue = new Issue();
+        newIssue.setMilestone(new Milestone().setNumber(milestone));
+        return newIssue;
     }
 
     protected TurboIssue commentOnIssue(String author, String commentText, int issueId) {

@@ -214,6 +214,22 @@ public class Logic {
                 .exceptionally(Futures.withResult(false));
     }
 
+    public CompletableFuture<Boolean> replaceIssueMilestone(TurboIssue issue, Integer milestone) {
+        logger.info("Changing milestone for " + issue + " on GitHub");
+        return repoIO.replaceIssueMilestone(issue, milestone)
+                .thenApply(resultingIssue -> {
+                    logger.info("Changing milestone for " + issue + " on UI");
+                    if (resultingIssue.getMilestone() != null) {
+                        issue.setMilestoneById(resultingIssue.getMilestone().getNumber());
+                    } else {
+                        issue.setMilestoneById(null);
+                    }
+                    refreshUI();
+                    return true;
+                })
+                .exceptionally(Futures.withResult(false));
+    }
+
     /**
      * Determines data to be sent to the GUI to refresh the entire GUI with the current model in Logic,
      * and then sends the data to the GUI.
