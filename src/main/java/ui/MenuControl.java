@@ -140,15 +140,16 @@ public class MenuControl extends MenuBar {
      * Prompt use for whether to save the current board panel info or not
      * when user is closing current board (i.e. switching to another board)
      *
-     * @param currentPanelInfo
      * @return true if user choose to save, false if user choose to discard
      */
-    private boolean promptToSaveCurrentBoard(List<PanelInfo> currentPanelInfo) {
+    private boolean promptToSaveCurrentBoard() {
+        List<PanelInfo> currentPanelInfo = panels.getCurrentPanelInfos();
         List<PanelInfo> lastOpenBoardPanelInfo = prefs.getLastOpenBoardPanelInfo();
 
-        if (!lastOpenBoardPanelInfo.equals(currentPanelInfo)) {
+        if (!currentPanelInfo.equals(lastOpenBoardPanelInfo)) {
             ConfirmChangesDialog dlg = new ConfirmChangesDialog(mainStage);
             Optional<ButtonType> response = dlg.showAndWait();
+            prefs.setLastOpenBoardPanelInfo(currentPanelInfo);
             if (response.get() == ButtonType.OK) {
                 onBoardSave();
                 logger.info("Changes to the current board saved.");
@@ -172,7 +173,7 @@ public class MenuControl extends MenuBar {
         List<PanelInfo> currentPanelInfo = panels.getCurrentPanelInfos();
         List<PanelInfo> newPanelInfo = panelInfo;
 
-        boolean currentBoardSaved = promptToSaveCurrentBoard(currentPanelInfo);
+        boolean currentBoardSaved = promptToSaveCurrentBoard();
 
         if (currentBoardSaved && prefs.getLastOpenBoard().isPresent()
                 && prefs.getLastOpenBoard().get().equals(boardName)) {
@@ -254,6 +255,7 @@ public class MenuControl extends MenuBar {
     }
     
     public void switchBoard() {
+        promptToSaveCurrentBoard();
         Optional<String> name = prefs.switchBoard();
         if (name.isPresent()) {
             onBoardOpen(name.get(), prefs.getBoardPanels(name.get()));

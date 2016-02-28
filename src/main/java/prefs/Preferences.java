@@ -141,7 +141,7 @@ public class Preferences { // NOPMD
             int lastBoard = boardNames.indexOf(getLastOpenBoard().get());
             int index = (lastBoard + 1) % boardNames.size();
             
-            return Optional.of(boardNames.get(index));
+            setLastOpenBoard(boardNames.get(index));
         }
         
         return getLastOpenBoard();
