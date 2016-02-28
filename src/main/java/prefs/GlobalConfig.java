@@ -108,6 +108,11 @@ public class GlobalConfig {
         lastOpenBoard = Optional.empty();
     }
 
+    public void clearAllBoards() {
+        clearLastOpenBoard();
+        savedBoards.clear();
+    }
+
     public List<String> getLastOpenFilters() {
         return lastSessionPanels.stream().map(PanelInfo::getPanelFilter).collect(Collectors.toList());
     }
