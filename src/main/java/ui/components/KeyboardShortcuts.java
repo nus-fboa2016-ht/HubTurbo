@@ -54,6 +54,8 @@ public final class KeyboardShortcuts {
 
     // non-customizable keyboard shortcuts
     // ui.listpanel.ListPanel
+    public static final KeyCodeCombination ENTER =
+            new KeyCodeCombination(KeyCode.ENTER);
     public static final KeyCodeCombination JUMP_TO_FIRST_ISSUE =
             new KeyCodeCombination(KeyCode.ENTER, KeyCombination.SHORTCUT_DOWN);
     public static final KeyCodeCombination JUMP_TO_FILTER_BOX =

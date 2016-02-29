@@ -125,6 +125,7 @@ public class PanelFocusTest extends UITest {
             panelControl.getPanelCount() - 1);
         // 3. Open board
         pushKeys(SWITCH_BOARD);
+        pushKeys(ENTER);
 
         // Check that first panel is on focus
         awaitCondition(() -> 0 == panelControl.getCurrentlySelectedPanel().get());

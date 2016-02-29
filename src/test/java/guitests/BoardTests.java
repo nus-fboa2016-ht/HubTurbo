@@ -69,8 +69,9 @@ public class BoardTests extends UITest {
         click("OK");
         click("No"); // Do not overwrite
         click("Cancel"); // Cancel "Save as"
-        clickMenu("Boards", "Open", "New Board");
-        click("No"); // Abort unsaved changes
+        traverseMenu("Boards", "Open", "New Board");
+        waitUntilNodeAppears(hasText("Cancel"));
+        click("Cancel");
         waitAndAssertEquals(2, panelControl::getPanelCount);
     }
 }
