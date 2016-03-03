@@ -5,6 +5,7 @@ import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
 
 public class PickerAssignee extends TurboUser implements Comparable<PickerAssignee> {
 
@@ -17,20 +18,12 @@ public class PickerAssignee extends TurboUser implements Comparable<PickerAssign
         super(user);
     }
 
-    public PickerAssignee(PickerAssignee assignee) {
-        super(assignee.getRepoId(), assignee.getLoginName(), assignee.getRealName());
-        //TODO yy set avatar url?
-        setExisting(assignee.isExisting());
-        setFaded(assignee.isFaded());
-        setHighlighted(assignee.isHighlighted());
-        setSelected(assignee.isSelected());
-    }
-
     public Node getNode() {
         Label assignee = new Label(getLoginName());
+        assignee.setGraphic(new ImageView(getAvatarImage()));
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = fontLoader.computeStringWidth(assignee.getText(), assignee.getFont());
-        assignee.setPrefWidth(width + 35);
+        assignee.setPrefWidth(width + 50);
         assignee.getStyleClass().add("labels");
         assignee.setStyle("-fx-background-color: yellow;");
 
@@ -51,6 +44,7 @@ public class PickerAssignee extends TurboUser implements Comparable<PickerAssign
 
     public Node getNewlyAssignedAssigneeNode(boolean hasSuggestion) {
         Label assignee = new Label(getLoginName());
+        assignee.setGraphic(new ImageView(getAvatarImage()));
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = fontLoader.computeStringWidth(assignee.getText(), assignee.getFont());
         assignee.setPrefWidth(width + 35);
@@ -70,11 +64,14 @@ public class PickerAssignee extends TurboUser implements Comparable<PickerAssign
 
     public Node getExistingAssigneeNode(boolean hasSuggestion) {
         Label assignee = new Label(getLoginName());
+        assignee.setGraphic(new ImageView(getAvatarImage()));
         FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
         double width = fontLoader.computeStringWidth(assignee.getText(), assignee.getFont());
         assignee.setPrefWidth(width + 35);
         assignee.getStyleClass().add("labels");
         assignee.setStyle("-fx-background-color: yellow;");
+
+
 
         if (isSelected && (hasSuggestion || isHighlighted)) {
             assignee.setStyle(assignee.getStyle() + "-fx-opacity: 40%;");
