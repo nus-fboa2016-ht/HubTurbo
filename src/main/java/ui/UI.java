@@ -29,6 +29,7 @@ import ui.components.HTStatusBar;
 import ui.components.KeyboardShortcuts;
 import ui.components.StatusUI;
 import ui.components.pickers.LabelPicker;
+import ui.components.pickers.RepositoryPicker;
 import ui.issuepanel.PanelControl;
 import undo.UndoController;
 import util.*;
@@ -183,6 +184,7 @@ public class UI extends Application implements EventDispatcher {
 
     private void initialisePickers() {
         new LabelPicker(this, mainStage);
+        new RepositoryPicker(this, mainStage, this::primaryRepoChanged);
     }
 
     protected void registerTestEvents() {
