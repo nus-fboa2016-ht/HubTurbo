@@ -1,6 +1,7 @@
 package guitests;
 
 import static org.junit.Assert.assertEquals;
+import static org.loadui.testfx.controls.Commons.hasText;
 import static ui.components.KeyboardShortcuts.*;
 
 import java.util.ArrayList;
@@ -125,6 +126,7 @@ public class PanelFocusTest extends UITest {
             panelControl.getPanelCount() - 1);
         // 3. Open board
         pushKeys(SWITCH_BOARD);
+        waitUntilNodeAppears(hasText("OK"));
         pushKeys(ENTER);
 
         // Check that first panel is on focus
