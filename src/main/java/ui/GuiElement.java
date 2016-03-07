@@ -14,15 +14,18 @@ public class GuiElement {
     private final List<TurboLabel> labels;
     private final Optional<TurboMilestone> milestone;
     private final Optional<TurboUser> assignee;
+    private final Optional<TurboUser> author;
 
     public GuiElement(TurboIssue issue,
                       List<TurboLabel> labels,
                       Optional<TurboMilestone> milestone,
-                      Optional<TurboUser> assignee) {
+                      Optional<TurboUser> assignee,
+                      Optional<TurboUser> author) {
         this.issue = issue;
         this.labels = labels;
         this.milestone = milestone;
         this.assignee = assignee;
+        this.author = author;
     }
 
     public TurboIssue getIssue() {
@@ -48,7 +51,11 @@ public class GuiElement {
         return assignee;
     }
 
+    public Optional<TurboUser> getAuthor() {
+        return author;
+    }
+
     public Optional<TurboLabel> getLabelByActualName(String actualName) {
-        return labels.stream().filter(label -> label.getActualName().equals(actualName)).findFirst();
+        return labels.stream().filter(label -> label.getFullName().equals(actualName)).findFirst();
     }
 }
