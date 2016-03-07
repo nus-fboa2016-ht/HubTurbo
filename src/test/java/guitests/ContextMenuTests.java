@@ -107,6 +107,9 @@ public class ContextMenuTests extends UITest {
         sleep(EVENT_DELAY);
         click("Close issue (C)");
         sleep(EVENT_DELAY);
+        waitUntilNodeAppears("OK");
+        click("OK");
+        sleep(EVENT_DELAY);
         waitUntilNodeAppears("Undo");
         click("Undo");
         sleep(EVENT_DELAY);
@@ -115,6 +118,9 @@ public class ContextMenuTests extends UITest {
         rightClick("#dummy/dummy_col0_6");
         sleep(EVENT_DELAY);
         click("Reopen issue (O)");
+        sleep(EVENT_DELAY);
+        waitUntilNodeAppears("OK");
+        click("OK");
         sleep(EVENT_DELAY);
         waitUntilNodeAppears("Undo");
         click("Undo");
