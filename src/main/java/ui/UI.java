@@ -33,6 +33,7 @@ import ui.components.issuepicker.IssuePicker;
 import ui.components.pickers.BoardPicker;
 import ui.components.pickers.LabelPicker;
 import ui.components.pickers.MilestonePicker;
+import ui.components.pickers.RepositoryPicker;
 import ui.issuepanel.PanelControl;
 import undo.UndoController;
 import util.*;
@@ -208,6 +209,7 @@ public class UI extends Application implements EventDispatcher {
         new AssigneePicker(this, mainStage);
         new IssuePicker(this, mainStage);
         new BoardPicker(this, mainStage);
+        new RepositoryPicker(this, mainStage, this::primaryRepoChanged);
     }
 
     protected void registerTestEvents() {
