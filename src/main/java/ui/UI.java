@@ -216,6 +216,7 @@ public class UI extends Application implements EventDispatcher {
         new IssuePicker(this, mainStage);
         new BoardPicker(this, mainStage);
         new AssigneePicker(this, mainStage);
+        new RepositoryPicker(this, mainStage, this::primaryRepoChanged);
     }
 
     protected void registerTestEvents() {
