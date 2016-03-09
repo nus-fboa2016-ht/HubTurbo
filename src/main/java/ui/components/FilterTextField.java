@@ -2,7 +2,9 @@ package ui.components;
 
 import filter.ParseException;
 import filter.Parser;
+import filter.expression.QualifierType;
 import javafx.application.Platform;
+import javafx.geometry.Side;
 import javafx.scene.control.IndexRange;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
@@ -15,12 +17,15 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * A field augmented with the ability to revert edits, autocompletion, on-the-fly error
  * checking, and callbacks for various actions.
  */
 public class FilterTextField extends TextField {
+
+    private static final int MAX_SUGGESTIONS = 10;
 
     // A character class that indicates the characters considered to be word boundaries.
     // Specialised to HubTurbo's filter syntax.
@@ -31,6 +36,10 @@ public class FilterTextField extends TextField {
     private static final String VALID_FILTER_STYLE = "-fx-control-inner-background: white";
     private static final String INVALID_FILTER_STYLE = "-fx-control-inner-background: #EE8993";
 
+    // For on-the-fly parsing and checking
+    private final ValidationSupport validationSupport = new ValidationSupport();
+    private final SuggestionMenu suggestion;
+
     // Callback functions
     private Runnable cancel = () -> {};
     private Function<String, String> confirm = (s) -> s;
@@ -39,14 +48,13 @@ public class FilterTextField extends TextField {
     private String previousText;
 
     // The list of keywords which will be used in completion
-    private List<String> keywords = new ArrayList<>();
+    private List<String> keywords = new ArrayList<>(QualifierType.getCompletionKeywords());
 
-    // For on-the-fly parsing and checking
-    private final ValidationSupport validationSupport = new ValidationSupport();
 
     public FilterTextField(String initialText) {
         super(initialText);
         previousText = initialText;
+        suggestion = setupSuggestion();
         setup();
     }
 
@@ -71,19 +79,29 @@ public class FilterTextField extends TextField {
             }
             char typed = e.getCharacter().charAt(0);
 
-            if (typed == '\t' && shouldStartCompletion()) {
-                startCompletion(e);
+            if (typed == '\t') {
                 e.consume();
+                suggestion.hide();
             }
+
+            if (shouldStartCompletion()) {
+                suggestion.show(this, Side.BOTTOM, (this.getCaretPosition() - 1) * 10, 0);
+            } 
+            
         });
         setOnKeyPressed(e -> {
-             if (e.getCode() == KeyCode.TAB) {
+            if (e.getCode() == KeyCode.TAB) {
                  // Disable tab for UI traversal
                  e.consume();
-             }
+            }
         });
         setOnKeyReleased(e -> {
             e.consume();
+
+            if (suggestion.isShowing()) {
+                suggestion.loadSuggestions(getMatchingKeywords(getCurrentWord()));
+            }
+
             if (e.getCode() == KeyCode.ENTER) {
                 confirmEdit();
             } else if (e.getCode() == KeyCode.ESCAPE) {
@@ -125,6 +143,7 @@ public class FilterTextField extends TextField {
      * Determines if the word being edited begins a registered completion word.
      * If so, performs completion.
      */
+    @SuppressWarnings("unused")
     private void startCompletion(KeyEvent e) {
         String editedWord = getCurrentWord() + e.getCharacter();
         for (String candidateWord : keywords) {
@@ -133,6 +152,14 @@ public class FilterTextField extends TextField {
                 break;
             }
         }
+    }
+
+    /**
+     * @param query
+     * @return suggested keyword that contains a given query
+     */
+    private List<String> getMatchingKeywords(String query) {
+        return keywords.stream().filter(keyword -> keyword.contains(query)).collect(Collectors.toList());
     }
 
     /**
@@ -168,6 +195,7 @@ public class FilterTextField extends TextField {
     /**
      * Confirms a completion by moving to the extreme right side of the selection
      */
+    @SuppressWarnings("unused")
     private void confirmCompletion() {
         positionCaret(Math.max(getSelection().getStart(), getSelection().getEnd()));
     }
@@ -177,11 +205,19 @@ public class FilterTextField extends TextField {
      */
     private String getCurrentWord() {
         int caret = Math.min(getSelection().getStart(), getSelection().getEnd());
+        return getText().substring(getInitialCaretPosition(caret), caret);
+    }
+
+    /**
+     * @param caret
+     * @return index before first char in current word 
+     */
+    private int getInitialCaretPosition(int caret) {
         int pos = regexLastIndexOf(getText().substring(0, caret), WORD_BOUNDARY_REGEX);
         if (pos == -1) {
             pos = 0;
         }
-        return getText().substring(pos > 0 ? pos + 1 : pos, caret);
+        return pos > 0 ? pos + 1 : pos;
     }
 
     /**
@@ -230,6 +266,21 @@ public class FilterTextField extends TextField {
         int caretPosition = getCaretPosition();
         setText(newText);
         positionCaret(caretPosition);
+    }
+
+    // SuggestionMenu 
+    
+    private final SuggestionMenu setupSuggestion() {
+        SuggestionMenu suggestion = new SuggestionMenu(MAX_SUGGESTIONS);
+        suggestion.loadSuggestions(keywords);
+        suggestion.setOnHidden(e -> completeWord());
+        return suggestion;
+    }
+
+    private void completeWord() {
+        int caret = getCaretPosition();
+        selectRange(getInitialCaretPosition(caret), caret);
+        suggestion.getSelectedContent().ifPresent(this::replaceSelection);
     }
 
     /**
