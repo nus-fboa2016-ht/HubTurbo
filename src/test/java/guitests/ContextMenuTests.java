@@ -15,6 +15,7 @@ import ui.components.FilterTextField;
 import ui.listpanel.ListPanel;
 import ui.listpanel.ListPanelCell;
 
+
 public class ContextMenuTests extends UITest {
 
     private static final int EVENT_DELAY = 1000;
@@ -39,7 +40,7 @@ public class ContextMenuTests extends UITest {
      * All menu items should be disabled
      */
     @Test
-    public void testNoItemSelected() {
+    public void contextMenuDisabling_noIssueInListView_contextMenuItemsDisabled() {
         ListPanel issuePanel = find("#dummy/dummy_col0");
 
         click("#dummy/dummy_col0_filterTextField");
@@ -50,11 +51,9 @@ public class ContextMenuTests extends UITest {
         sleep(EVENT_DELAY);
 
         ContextMenu contextMenu = issuePanel.getContextMenu();
-        MenuItem readUnreadItem = contextMenu.getItems().get(0);
-        MenuItem changeLabelsItem = contextMenu.getItems().get(1);
-
-        assertTrue(readUnreadItem.isDisable());
-        assertTrue(changeLabelsItem.isDisable());
+        for (MenuItem menuItem : contextMenu.getItems()){
+            assertTrue(menuItem.isDisable());
+        }
     }
 
     /**
@@ -105,7 +104,7 @@ public class ContextMenuTests extends UITest {
         click("#dummy/dummy_col0_9");
         rightClick("#dummy/dummy_col0_9");
         sleep(EVENT_DELAY);
-        click("Close issue (C)");
+        click("Close issue (X)");
         sleep(EVENT_DELAY);
         waitUntilNodeAppears("OK");
         click("OK");
