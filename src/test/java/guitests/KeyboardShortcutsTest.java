@@ -181,6 +181,7 @@ public class KeyboardShortcutsTest extends UITest {
         // close issue
         push(getKeyCode("CLOSE_ISSUE"));
         push(KeyCode.ENTER);
+        waitUntilNodeAppears("Undo");
         assertEquals(true, issuePanel.getSelectedElement().isPresent());
         assertEquals(false, issuePanel.getSelectedElement().get().getIssue().isOpen());
         clearSelectedIssueId();
@@ -188,6 +189,7 @@ public class KeyboardShortcutsTest extends UITest {
         // reopen issue
         push(getKeyCode("REOPEN_ISSUE"));
         push(KeyCode.ENTER);
+        waitUntilNodeAppears("Undo");
         assertEquals(true, issuePanel.getSelectedElement().isPresent());
         assertEquals(true, issuePanel.getSelectedElement().get().getIssue().isOpen());
         clearSelectedIssueId();
