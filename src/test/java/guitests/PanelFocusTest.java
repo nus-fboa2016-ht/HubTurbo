@@ -117,6 +117,7 @@ public class PanelFocusTest extends UITest {
         pushKeys(KeyCode.DOWN);
         pushKeys(KeyCode.DOWN);
         pushKeys(KeyCode.ENTER);
+        waitUntilNodeAppears("#boardnameinput");
         ((TextField) find("#boardnameinput")).setText("Board 1");
         click("OK");
         awaitCondition(() -> 1 == panelControl.getNumberOfSavedBoards());
@@ -126,8 +127,9 @@ public class PanelFocusTest extends UITest {
             panelControl.getPanelCount() - 1);
         // 3. Open board
         pushKeys(SWITCH_BOARD);
-        waitUntilNodeAppears(hasText("OK"));
+        waitUntilNodeAppears("OK");
         pushKeys(ENTER);
+        waitUntilNodeDisappears("OK");
 
         // Check that first panel is on focus
         awaitCondition(() -> 0 == panelControl.getCurrentlySelectedPanel().get());
