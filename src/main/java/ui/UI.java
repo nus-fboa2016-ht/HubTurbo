@@ -29,6 +29,7 @@ import ui.components.HTStatusBar;
 import ui.components.KeyboardShortcuts;
 import ui.components.StatusUI;
 import ui.components.issuepicker.IssuePicker;
+import ui.components.pickers.BoardPicker;
 import ui.components.pickers.LabelPicker;
 import ui.components.pickers.RepositoryPicker;
 import ui.issuepanel.PanelControl;
@@ -204,6 +205,7 @@ public class UI extends Application implements EventDispatcher {
         new LabelPicker(this, mainStage);
         new RepositoryPicker(this, mainStage, this::primaryRepoChanged);
         new IssuePicker(this, mainStage);
+        new BoardPicker(this, mainStage);
     }
 
     protected void registerTestEvents() {
