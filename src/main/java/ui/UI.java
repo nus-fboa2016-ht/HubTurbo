@@ -28,6 +28,7 @@ import prefs.Preferences;
 import ui.components.HTStatusBar;
 import ui.components.KeyboardShortcuts;
 import ui.components.StatusUI;
+import ui.components.pickers.BoardPicker;
 import ui.components.pickers.LabelPicker;
 import ui.issuepanel.PanelControl;
 import undo.UndoController;
@@ -183,6 +184,7 @@ public class UI extends Application implements EventDispatcher {
 
     private void initialisePickers() {
         new LabelPicker(this, mainStage);
+        new BoardPicker(this, mainStage);
     }
 
     protected void registerTestEvents() {
