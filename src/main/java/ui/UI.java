@@ -32,6 +32,7 @@ import ui.components.pickers.AssigneePicker;
 import ui.components.issuepicker.IssuePicker;
 import ui.components.pickers.BoardPicker;
 import ui.components.issuepicker.IssuePicker;
+import ui.components.pickers.BoardPicker;
 import ui.components.pickers.LabelPicker;
 import ui.components.pickers.MilestonePicker;
 import ui.components.pickers.RepositoryPicker;
@@ -212,6 +213,7 @@ public class UI extends Application implements EventDispatcher {
         new BoardPicker(this, mainStage);
         new RepositoryPicker(this, mainStage, this::primaryRepoChanged);
         new IssuePicker(this, mainStage);
+        new BoardPicker(this, mainStage);
     }
 
     protected void registerTestEvents() {
