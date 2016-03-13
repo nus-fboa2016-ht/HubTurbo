@@ -6,7 +6,7 @@ import org.eclipse.egit.github.core.Issue;
 
 import java.io.IOException;
 
-public class ReplaceIssueAssigneeTask extends GitHubRepoTask<Issue> {
+public class ReplaceIssueAssigneeTask extends GitHubRepoTask<Boolean> {
     private final String repoId;
     private final int issueId;
     private final String issueTitle;
@@ -24,7 +24,19 @@ public class ReplaceIssueAssigneeTask extends GitHubRepoTask<Issue> {
     @Override
     public void run() {
         try {
-            response.complete(repo.setAssignee(repoId, issueId, issueTitle, issueAssigneeLoginName));
+            Issue result = repo.setAssignee(repoId, issueId, issueTitle, issueAssigneeLoginName);
+            String resultAssigneeLoginName = result.getAssignee().getLogin();
+
+            if(resultAssigneeLoginName == null){
+                response.complete(issueAssigneeLoginName == null);
+            } else {
+                response.complete(result.getAssignee().getLogin().equals(issueAssigneeLoginName));
+            }
+//            String assigneeLoginName = result.getAssignee() == null ? null : result.getAssignee().getLogin();
+//
+//            if(assigneeLoginName == issueAssigneeLoginName) response.complete(true);
+//            if(assigneeLoginName == null || issueAssigneeLoginName == null) response.complete(false);
+//            response.complete(assigneeLoginName.equals(issueAssigneeLoginName));
         } catch (IOException e) {
             response.completeExceptionally(e);
         }
