@@ -121,12 +121,22 @@ public class PickerAssignee extends TurboUser implements Comparable<PickerAssign
         return thisLoginName.compareTo(otherLoginName);
     }
 
+    /**
+     * This isn't unnecessary as fields are added, but are not taken into account for equality.
+     * @return
+     */
     @Override
+    @SuppressWarnings("PMD")
     public boolean equals(Object o) {
         return super.equals(o);
     }
 
+    /**
+     * This isn't unnecessary as fields are added, but are not taken into account for equality.
+     * @return
+     */
     @Override
+    @SuppressWarnings("PMD")
     public int hashCode() {
         return super.hashCode();
     }

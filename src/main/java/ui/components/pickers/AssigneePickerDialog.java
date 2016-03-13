@@ -21,7 +21,6 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
     private static final String ALL_ASSIGNEES = "All Assignees";
 
     private final List<PickerAssignee> originalAssignees = new ArrayList<>();
-    private VBox assigneeBox;
     FlowPane allAssigneesPane, assignedAssigneePane;
     private TextField textField;
     private AssigneePickerState state;
@@ -30,6 +29,7 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
         initOwner(stage);
         setTitle(DIALOG_TITLE);
         setupButtons(getDialogPane());
+        setConfirmResultConverter();
         originalAssignees.addAll(convertToPickerAssignees(issue, assignees));
         state = new AssigneePickerState(originalAssignees);
         initUI();
@@ -96,12 +96,10 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
 
     private void setupButtons(DialogPane assigneePickerDialogPane) {
         ButtonType confirmButtonType = new ButtonType("Confirm", ButtonBar.ButtonData.OK_DONE);
-        setConfirmResultConverter(confirmButtonType);
-
         assigneePickerDialogPane.getButtonTypes().addAll(confirmButtonType, ButtonType.CANCEL);
     }
 
-    private void setConfirmResultConverter(ButtonType confirmButtonType) {
+    private void setConfirmResultConverter() {
         setResultConverter((dialogButton) -> {
             List<PickerAssignee> finalList = state.getCurrentAssigneesList();
             if (hasSelectedAssignee(finalList)) {
@@ -113,7 +111,7 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
     }
 
     private void initUI() {
-        assigneeBox = new VBox();
+        VBox assigneeBox = new VBox();
         assignedAssigneePane = createAssigneeGroup();
         allAssigneesPane = createAssigneeGroup();
         textField = new TextField();

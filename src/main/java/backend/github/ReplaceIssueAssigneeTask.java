@@ -27,16 +27,11 @@ public class ReplaceIssueAssigneeTask extends GitHubRepoTask<Boolean> {
             Issue result = repo.setAssignee(repoId, issueId, issueTitle, issueAssigneeLoginName);
             String resultAssigneeLoginName = result.getAssignee().getLogin();
 
-            if(resultAssigneeLoginName == null){
+            if (resultAssigneeLoginName == null) {
                 response.complete(issueAssigneeLoginName == null);
             } else {
                 response.complete(result.getAssignee().getLogin().equals(issueAssigneeLoginName));
             }
-//            String assigneeLoginName = result.getAssignee() == null ? null : result.getAssignee().getLogin();
-//
-//            if(assigneeLoginName == issueAssigneeLoginName) response.complete(true);
-//            if(assigneeLoginName == null || issueAssigneeLoginName == null) response.complete(false);
-//            response.complete(assigneeLoginName.equals(issueAssigneeLoginName));
         } catch (IOException e) {
             response.completeExceptionally(e);
         }

@@ -6,12 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AssigneePickerState {
-    private List<PickerAssignee> originalAssigneesList;
     private List<PickerAssignee> currentAssigneesList;
 
     public AssigneePickerState(List<PickerAssignee> assignees) {
-        originalAssigneesList = assignees;
-        currentAssigneesList = new ArrayList<>(originalAssigneesList);
+        currentAssigneesList = new ArrayList<>(assignees);
     }
 
     public AssigneePickerState(List<PickerAssignee> assignees, String userInput) {
@@ -19,7 +17,7 @@ public class AssigneePickerState {
         processInput(userInput);
     }
 
-    public void processInput(String userInput) {
+    private void processInput(String userInput) {
         if (userInput.isEmpty()) {
             return;
         }
@@ -35,7 +33,7 @@ public class AssigneePickerState {
         }
     }
 
-    public void toggleAssignee(String assigneeQuery) {
+    public final void toggleAssignee(String assigneeQuery) {
         String assigneeName = getAssigneeName(assigneeQuery);
         if (assigneeName == null) return;
         currentAssigneesList.stream()
@@ -45,7 +43,7 @@ public class AssigneePickerState {
                 });
     }
 
-    public void filterAssignee(String query) {
+    private void filterAssignee(String query) {
         currentAssigneesList.stream()
                 .forEach(assignee -> {
                     boolean matchQuery = Utility.containsIgnoreCase(assignee.getLoginName(), query);
@@ -58,7 +56,7 @@ public class AssigneePickerState {
         return this.currentAssigneesList;
     }
 
-    public void highlightFirstMatchingAssignee() {
+    private void highlightFirstMatchingAssignee() {
         if (hasMatchingAssignee(currentAssigneesList)) {
             currentAssigneesList.stream()
                     .filter(assignee -> !assignee.isFaded())
