@@ -153,7 +153,7 @@ public class LogicTests {
         mockRepoIOReplaceIssueAssigneeResult(true);
         mockMultiModelReplaceIssueAssignee(Optional.of(issue), Optional.empty());
 
-        assertTrue(logic.replaceIssueAssignee(issue, new String()).get());
+        assertTrue(logic.replaceIssueAssignee(issue, "").get());
     }
 
     /**
@@ -177,7 +177,7 @@ public class LogicTests {
         mockRepoIOReplaceIssueAssigneeResult(true);
         mockMultiModelReplaceIssueAssignee(Optional.empty(), Optional.empty());
 
-        assertFalse(logic.replaceIssueAssignee(issue, new String()).get());
+        assertFalse(logic.replaceIssueAssignee(issue, "").get());
     }
 
     /**
@@ -201,7 +201,7 @@ public class LogicTests {
         mockRepoIOReplaceIssueAssigneeResult(false);
         mockMultiModelReplaceIssueAssignee(Optional.of(issue), Optional.empty());
 
-        assertFalse(logic.replaceIssueAssignee(issue, new String()).get());
+        assertFalse(logic.replaceIssueAssignee(issue, "").get());
     }
 
     /**
