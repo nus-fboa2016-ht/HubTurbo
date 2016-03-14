@@ -10,7 +10,6 @@ import javafx.application.Platform;
 import ui.GUIController;
 import ui.GuiElement;
 import ui.components.PanelMenuBar;
-import backend.resource.TurboUser;
 import filter.FilterException;
 import filter.Parser;
 import filter.expression.FilterExpression;
@@ -32,7 +31,6 @@ import prefs.PanelInfo;
 
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A FilterPanel is an AbstractPanel meant for containing issues and an accompanying filter text field,
@@ -113,9 +111,6 @@ public abstract class FilterPanel extends AbstractPanel {
 
         // Update keywords
         List<String> all = new ArrayList<>(QualifierType.getCompletionKeywords());
-        all.addAll(e.users.stream()
-            .map(TurboUser::getLoginName)
-            .collect(Collectors.toList()));
 
         // Ensure that completions appear in lexicographical order
         Collections.sort(all);

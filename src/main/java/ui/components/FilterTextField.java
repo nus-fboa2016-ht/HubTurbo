@@ -3,9 +3,7 @@ package ui.components;
 import filter.ParseException;
 import filter.Parser;
 import filter.expression.QualifierType;
-import javafx.application.Platform;
 import javafx.geometry.Side;
-import javafx.scene.control.IndexRange;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -44,18 +42,14 @@ public class FilterTextField extends TextField {
     private Runnable cancel = () -> {};
     private Function<String, String> confirm = (s) -> s;
 
-    // For reverting edits
-    private String previousText;
-
     // The list of keywords which will be used in completion
     private List<String> keywords = new ArrayList<>(QualifierType.getCompletionKeywords());
 
 
     public FilterTextField(String initialText) {
         super(initialText);
-        previousText = initialText;
-        suggestion = setupSuggestion();
         setup();
+        suggestion = setupSuggestion();
     }
 
     private void setup() {
@@ -80,13 +74,13 @@ public class FilterTextField extends TextField {
             char typed = e.getCharacter().charAt(0);
 
             if (typed == '\t') {
+                if (!suggestion.isShowing() && shouldStartCompletion()) {
+                    suggestion.show(this, Side.BOTTOM, 0, 0);
+                } else {
+                    suggestion.hide();
+                }
                 e.consume();
-                suggestion.hide();
             }
-
-            if (shouldStartCompletion()) {
-                suggestion.show(this, Side.BOTTOM, (this.getCaretPosition() - 1) * 10, 0);
-            } 
             
         });
         setOnKeyPressed(e -> {
@@ -98,21 +92,18 @@ public class FilterTextField extends TextField {
         setOnKeyReleased(e -> {
             e.consume();
 
-            if (suggestion.isShowing()) {
+            if (suggestion.isShowing() && !isNavigationKey(e)) {
                 suggestion.loadSuggestions(getMatchingKeywords(getCurrentWord()));
             }
 
             if (e.getCode() == KeyCode.ENTER) {
                 confirmEdit();
             } else if (e.getCode() == KeyCode.ESCAPE) {
-                if (getText().equals(previousText)) {
-                    cancel.run();
-                } else {
-                    revertEdit();
-                }
+                cancel.run();
             }
         });
     }
+
 
     /**
      * Sets the style of FilterTextField to the style for valid filter
@@ -128,6 +119,10 @@ public class FilterTextField extends TextField {
         this.setStyle(INVALID_FILTER_STYLE);
     }
 
+    private boolean isNavigationKey(KeyEvent e) {
+        return e.getCode() == KeyCode.UP || e.getCode() == KeyCode.DOWN;
+    }
+
     /**
      * Completion is only started when there's effectively nothing (only whitespace)
      * after the caret, or if there is selected text (indicating either that we are in
@@ -140,21 +135,6 @@ public class FilterTextField extends TextField {
     }
 
     /**
-     * Determines if the word being edited begins a registered completion word.
-     * If so, performs completion.
-     */
-    @SuppressWarnings("unused")
-    private void startCompletion(KeyEvent e) {
-        String editedWord = getCurrentWord() + e.getCharacter();
-        for (String candidateWord : keywords) {
-            if (candidateWord.startsWith(editedWord)) {
-                performCompletionOfWord(e, editedWord, candidateWord);
-                break;
-            }
-        }
-    }
-
-    /**
      * @param query
      * @return suggested keyword that contains a given query
      */
@@ -162,43 +142,6 @@ public class FilterTextField extends TextField {
         return keywords.stream().filter(keyword -> keyword.contains(query)).collect(Collectors.toList());
     }
 
-    /**
-     * Low-level manipulation of field selection to implement completion
-     */
-    private void performCompletionOfWord(KeyEvent e, String word, String candidateWord) {
-        e.consume();
-        int caret = getCaretPosition();
-        if (getSelectedText().isEmpty()) {
-            String before = getText().substring(0, caret);
-            String insertion = e.getCharacter();
-            String after = getText().substring(caret, getText().length());
-            String addition = candidateWord.substring(word.length());
-            setText(before + insertion + addition + after);
-            Platform.runLater(() -> selectRange(
-                before.length() + insertion.length() + addition.length(),
-                before.length() + insertion.length()));
-        } else {
-            IndexRange sel = getSelection();
-            int start = Math.min(sel.getStart(), sel.getEnd());
-            int end = Math.max(sel.getStart(), sel.getEnd());
-            String before = getText().substring(0, start);
-            String after = getText().substring(end, getText().length());
-            String insertion = e.getCharacter();
-            String addition = candidateWord.substring(word.length());
-            setText(before + insertion + addition + after);
-            Platform.runLater(() -> selectRange(
-                before.length() + insertion.length() + addition.length(),
-                before.length() + insertion.length()));
-        }
-    }
-
-    /**
-     * Confirms a completion by moving to the extreme right side of the selection
-     */
-    @SuppressWarnings("unused")
-    private void confirmCompletion() {
-        positionCaret(Math.max(getSelection().getStart(), getSelection().getEnd()));
-    }
 
     /**
      * Determines the word currently being edited.
@@ -248,20 +191,11 @@ public class FilterTextField extends TextField {
         return "";
     }
 
-    /**
-     * Reverts the contents of the field to its last confirmed value.
-     */
-    private void revertEdit() {
-        setText(previousText);
-        positionCaret(getLength());
-        selectAll();
-    }
 
     /**
      * Commits the current contents of the field. This triggers its 'confirm' callback.
      */
     private void confirmEdit() {
-        previousText = getText();
         String newText = confirm.apply(getText());
         int caretPosition = getCaretPosition();
         setText(newText);
