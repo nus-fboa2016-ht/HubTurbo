@@ -371,6 +371,7 @@ public class ListPanel extends FilterPanel {
     private ContextMenu updateContextMenu(ContextMenu contextMenu) {
         updateMarkAsReadUnreadMenuItem();
         updateChangeLabelsMenuItem();
+        updateChangeMilestoneMenuItem();
 
         return contextMenu;
     }
@@ -388,6 +389,17 @@ public class ListPanel extends FilterPanel {
         }
 
         return changeLabelsMenuItem;
+    }
+
+    private MenuItem updateChangeMilestoneMenuItem() {
+        Optional<GuiElement> item = listView.getSelectedItem();
+        if (item.isPresent()) {
+            changeMilestoneMenuItem.setDisable(false);
+        } else {
+            changeMilestoneMenuItem.setDisable(true);
+        }
+
+        return changeMilestoneMenuItem;
     }
 
     private MenuItem updateMarkAsReadUnreadMenuItem() {
