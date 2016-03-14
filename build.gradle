@@ -7,7 +7,7 @@
 
 plugins {
     id "com.github.kt3k.coveralls" version "2.4.0"
-    id "com.github.johnrengelman.shadow" version "1.2.1"
+    id 'com.github.johnrengelman.shadow' version '1.2.3'
 }
 
 allprojects {
@@ -19,7 +19,7 @@ allprojects {
 
     apply plugin: 'checkstyle'
     checkstyle {
-        toolVersion = "6.7"
+        toolVersion = "6.15"
     }
 
     apply plugin: 'findbugs'
