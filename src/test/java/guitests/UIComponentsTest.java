@@ -16,6 +16,7 @@ public class UIComponentsTest extends UITest {
         click("#dummy/dummy_col0_filterTextField");
         selectAll();
         push(KeyCode.BACK_SPACE);
+        push(KeyCode.TAB);
         type("ass");
         push(KeyCode.TAB);
         FilterTextField filterTextField = find("#dummy/dummy_col0_filterTextField");
