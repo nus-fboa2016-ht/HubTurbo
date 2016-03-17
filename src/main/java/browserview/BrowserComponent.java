@@ -483,11 +483,6 @@ public class BrowserComponent {
         bringToTop();
     }
 
-    public void manageMilestones(String keyCode) {
-        sendKeysToBrowser(keyCode.toLowerCase());
-        bringToTop();
-    }
-
     public void showIssues() {
         logger.info("Navigating to Issues page");
         runBrowserOperation(() -> driver.get(GitHubURL.getPathForAllIssues(ui.logic.getDefaultRepo()), false));
