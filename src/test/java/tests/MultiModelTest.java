@@ -78,7 +78,7 @@ public class MultiModelTest {
     }
     
      /**
-     * Tests that replaceIssueAssignee returns Optional.empty if the model for the
+     * Tests that replaceIssueAssigneeOnServer returns Optional.empty if the model for the
      * issue given in the argument can't be found
      */
     @Test
