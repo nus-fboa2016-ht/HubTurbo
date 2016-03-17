@@ -290,7 +290,7 @@ public class ListPanel extends FilterPanel {
                 if (KeyPress.isValidKeyCombination(GOTO_MODIFIER.getCode(), event.getCode())) {
                     ui.getBrowserComponent().showMilestones();
                 } else {
-                    changeMilestone();
+                    changeMilestoneOfSelectedIssue();
                 }
             }
             if (UNDO_LABEL_CHANGES.match(event)) {
@@ -347,7 +347,7 @@ public class ListPanel extends FilterPanel {
 
         changeMilestoneMenuItem.setText(changeMilestoneMenuItemText);
         changeMilestoneMenuItem.setOnAction(e -> {
-            changeMilestone();
+            changeMilestoneOfSelectedIssue();
         });
 
         markAllBelowAsReadMenuItem.setText(MARK_ALL_AS_READ_MENU_ITEM_TEXT);
@@ -482,6 +482,12 @@ public class ListPanel extends FilterPanel {
         }
     }
 
+    private void changeMilestoneOfSelectedIssue() {
+        if (getSelectedElement().isPresent()) {
+            ui.triggerEvent(new ShowMilestonePickerEvent(getSelectedElement().get().getIssue()));
+        }
+    }
+
     @Override
     protected void startLoadingAnimationIfApplicable(PrimaryRepoOpeningEvent e) {
         // Repo is being opened by the repo selector, does not need to filter if repo is already specified for panel
@@ -511,12 +517,6 @@ public class ListPanel extends FilterPanel {
 
     private void stopLoadingAnimation() {
         hideLoadingIndicator();
-    }
-
-    private void changeMilestone() {
-        if (getSelectedElement().isPresent()) {
-            ui.triggerEvent(new ShowMilestonePickerEvent(getSelectedElement().get().getIssue()));
-        }
     }
 
     /**
