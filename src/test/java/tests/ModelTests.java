@@ -335,4 +335,26 @@ public class ModelTests {
         assertEquals(1, result.get().getId());
         assertEquals(newLabels, result.get().getLabels());
     }
+
+    /**
+     * Tests that replaceIssueAssigneeOnServer finds issue with the right id and successfully modify the
+     * issue's assignee
+     */
+    @Test
+    public void replaceIssueAssignee_successful() {
+        String repoId = "testowner/testrepo";
+        String originalAssignee = "user1";
+        String newAssignee = "user2";
+
+        TurboIssue issue1 = LogicTests.createIssueWithAssignee(1, originalAssignee);
+        TurboIssue issue2 = LogicTests.createIssueWithAssignee(2, originalAssignee);
+        TurboIssue issue3 = LogicTests.createIssueWithAssignee(3, originalAssignee);
+        List<TurboIssue> issues = Arrays.asList(issue3, issue2, issue1);
+
+        Model model = new Model(repoId, issues, new ArrayList<>(),
+                                new ArrayList<>(), new ArrayList<>());
+        Optional<TurboIssue> result = model.replaceIssueAssignee(issue1.getId(), newAssignee);
+        assertEquals(1, result.get().getId());
+        assertEquals(newAssignee, result.get().getAssignee().get());
+    }
 }
