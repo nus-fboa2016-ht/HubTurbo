@@ -347,7 +347,7 @@ public class TurboIssue {
     public static List<TurboIssue> getMatchedIssues(List<TurboIssue> issues, String query){
         List<String> queries = Arrays.asList(query.split("\\s"));
         return issues.stream()
-            .filter(i -> Utility.containsIgnoreCaseMultipleWords(i.getTitle(), queries))
+            .filter(i -> Utility.containsIgnoreCaseMultipleWords(i.getTitle() + " " + i.getId(), queries))
             .collect(Collectors.toList());
     }
 
