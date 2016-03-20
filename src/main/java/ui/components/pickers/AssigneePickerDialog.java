@@ -86,7 +86,7 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
     }
 
     private boolean isExistingAssignee(TurboIssue issue, PickerAssignee assignee) {
-        if(!issue.getAssignee().isPresent()) return false;
+        if (!issue.getAssignee().isPresent()) return false;
         return issue.getAssignee().get().equals(assignee.getLoginName());
     }
 
