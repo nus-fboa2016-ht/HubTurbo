@@ -25,6 +25,14 @@ public class PickerAssignee extends TurboUser implements Comparable<PickerAssign
         super(user);
     }
 
+    public PickerAssignee(PickerAssignee assignee) {
+        this((TurboUser) assignee);
+        setExisting(assignee.isExisting());
+        setSelected(assignee.isSelected());
+        setFaded(assignee.isFaded());
+        setHighlighted(assignee.isHighlighted());
+    }
+
     public Node getHNode() {
         HBox assigneeBox = new HBox();
         assigneeBox.setSpacing(30);
