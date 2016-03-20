@@ -370,8 +370,9 @@ public class ListPanel extends FilterPanel {
                 markAllBelowAsUnreadMenuItem, changeLabelsMenuItem, changeMilestoneMenuItem);
                                       markAllBelowAsUnreadMenuItem, changeLabelsMenuItem);
 
+                                      markAllBelowAsUnreadMenuItem, changeLabelsMenuItem,
+                                      changeAssigneeMenuItem);
 
-        contextMenu.getItems().addAll(markAsReadUnreadMenuItem, changeLabelsMenuItem, changeAssigneeMenuItem);
         contextMenu.setOnShowing(e -> updateContextMenu(contextMenu));
         listView.setContextMenu(contextMenu);
 
@@ -382,12 +383,24 @@ public class ListPanel extends FilterPanel {
         updateMarkAsReadUnreadMenuItem();
         updateChangeLabelsMenuItem();
         updateChangeMilestoneMenuItem();
+        updateChangeAssigneeMenuItem();
 
         return contextMenu;
     }
 
     public ContextMenu getContextMenu() {
         return contextMenu;
+    }
+
+    private MenuItem updateChangeAssigneeMenuItem() {
+        Optional<GuiElement> item = listView.getSelectedItem();
+        if (item.isPresent()) {
+            changeAssigneeMenuItem.setDisable(false);
+        } else {
+            changeAssigneeMenuItem.setDisable(true);
+        }
+
+        return changeAssigneeMenuItem;
     }
 
     private MenuItem updateChangeLabelsMenuItem() {
