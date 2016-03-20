@@ -220,7 +220,7 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
 
     private FlowPane createAssignedAssigneeGroup() {
         FlowPane assigneeGroup = new FlowPane();
-        assigneeGroup.setPadding(new Insets(0, 5, 0, 5));
+        assigneeGroup.setPadding(new Insets(5, 5, 5, 5));
         assigneeGroup.setHgap(3);
         assigneeGroup.setVgap(5);
         assigneeGroup.setStyle("-fx-border-radius: 3;");

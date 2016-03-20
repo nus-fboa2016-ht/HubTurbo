@@ -105,7 +105,7 @@ public class PickerAssignee extends TurboUser implements Comparable<PickerAssign
         assignee.setPrefWidth(width + 35 + AVATAR_SIZE);
         assignee.setPrefHeight(LABEL_HEIGHT);
         assignee.getStyleClass().add("labels");
-        assignee.setStyle("-fx-background-color: yellow;");
+        assignee.setStyle("-fx-background-color: lightgreen;");
         return assignee;
     }
 
