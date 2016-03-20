@@ -115,9 +115,10 @@ public class TurboIssueEvent {
         assert type == IssueEventType.Assigned || type == IssueEventType.Unassigned;
         return assignedUser;
     }
-    public void setAssignedUser(User assignedUser) {
+    public TurboIssueEvent setAssignedUser(User assignedUser) {
         assert type == IssueEventType.Assigned || type == IssueEventType.Unassigned;
         this.assignedUser = assignedUser;
+        return this;
     }
 
     public static Label octicon(String which) {
