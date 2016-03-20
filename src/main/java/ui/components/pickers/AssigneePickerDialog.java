@@ -212,7 +212,7 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
                 .findAny()
                 .get();
     }
-    
+
     private Node setMouseClickForNode(Node node, String assigneeName) {
         node.setOnMouseClicked(e -> handleMouseClick(assigneeName));
         return node;
@@ -235,7 +235,7 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
 
     private ScrollPane createMatchingAssigneePane() {
         ScrollPane matchingAssigneePane = new ScrollPane();
-        matchingAssigneePane.setPrefViewportHeight(200);
+        matchingAssigneePane.setMaxHeight(200);
         matchingAssigneePane.setContent(matchingAssigneesBox);
         return matchingAssigneePane;
     }
