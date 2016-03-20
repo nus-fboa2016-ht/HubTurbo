@@ -107,7 +107,7 @@ public class MultiModel implements IModel {
     }
 
     /**
-     * Replaces the milestone of an issue specified by {@code issueId} in {@code repoId} with {@code labels}
+     * Replaces the milestone of an issue specified by {@code issueId} in {@code repoId} with {@code milestone}
      * @param repoId
      * @param issueId
      * @param milestone
