@@ -2,6 +2,8 @@ package ui.components.pickers;
 
 import backend.resource.TurboIssue;
 import backend.resource.TurboUser;
+import com.sun.javafx.tk.FontLoader;
+import com.sun.javafx.tk.Toolkit;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -20,7 +22,6 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
     public static final String DIALOG_TITLE = "Select Assignee";
     private static final String ASSIGNED_ASSIGNEE = "Assigned Assignee";
     private static final String ALL_ASSIGNEES = "All Assignees";
-    private static final int QUERY_DISPLAY_LIMIT = 5;
 
     private final List<PickerAssignee> originalAssignees = new ArrayList<>();
     FlowPane assignedAssigneePane;
@@ -149,20 +150,17 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
         matchingAssigneesBox.getChildren().clear();
 
         if (matchingAssigneeList.isEmpty()) {
-            Label noMatchAssigneeLabel = new Label("No users matched your query.");
-            noMatchAssigneeLabel.setPrefHeight(40);
-            noMatchAssigneeLabel.setPrefWidth(398);
-            noMatchAssigneeLabel.setAlignment(Pos.CENTER);
+            Label noMatchAssigneeLabel = createNoMatchingAssigneeLabel();
             matchingAssigneesBox.getChildren().add(noMatchAssigneeLabel);
             return; 
         }
 
         matchingAssigneeList.stream()
                 .sorted()
-                .limit(QUERY_DISPLAY_LIMIT)
                 .forEach(assignee -> matchingAssigneesBox.getChildren().add(setMouseClickForNode(assignee.getHNode(),
                         assignee.getLoginName())));
     }
+
     private void addSeparator(FlowPane assignedAssigneeStatus) {
         assignedAssigneeStatus.getChildren().add(new Label("|"));
     }
@@ -195,6 +193,9 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
             Node existingAssigneeNode = setMouseClickForNode(existingAssignee.getExistingAssigneeNode(hasSuggestion),
                     existingAssignee.getLoginName());
             assignedAssigneeStatus.getChildren().add(existingAssigneeNode);
+        } else {
+            Label noExistingAssignee = createNoExistingAssigneeLabel();
+            assignedAssigneeStatus.getChildren().add(noExistingAssignee);
         }
     }
 
@@ -211,14 +212,7 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
                 .findAny()
                 .get();
     }
-
-    private void populateAllAssignees(List<PickerAssignee> assigneeList, FlowPane allAssigneesPane) {
-        allAssigneesPane.getChildren().clear();
-        assigneeList.stream()
-                .forEach(assignee -> allAssigneesPane.getChildren().add(setMouseClickForNode(assignee.getHNode(),
-                        assignee.getLoginName())));
-    }
-
+    
     private Node setMouseClickForNode(Node node, String assigneeName) {
         node.setOnMouseClicked(e -> handleMouseClick(assigneeName));
         return node;
@@ -241,9 +235,26 @@ public class AssigneePickerDialog extends Dialog<Pair<ButtonType, String>> {
 
     private ScrollPane createMatchingAssigneePane() {
         ScrollPane matchingAssigneePane = new ScrollPane();
-        matchingAssigneePane.setVmax(440);
+        matchingAssigneePane.setPrefViewportHeight(200);
         matchingAssigneePane.setContent(matchingAssigneesBox);
         return matchingAssigneePane;
+    }
+
+    private Label createNoMatchingAssigneeLabel() {
+        Label noMatchAssigneeLabel = new Label("No users matched your query.");
+        noMatchAssigneeLabel.setPrefHeight(40);
+        noMatchAssigneeLabel.setPrefWidth(398);
+        noMatchAssigneeLabel.setAlignment(Pos.CENTER);
+        return noMatchAssigneeLabel;
+    }
+
+    private Label createNoExistingAssigneeLabel() {
+        Label noExistingAssignee = new Label("No assignee");
+        noExistingAssignee.setPrefHeight(40);
+        FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
+        double width = fontLoader.computeStringWidth(noExistingAssignee.getText(), noExistingAssignee.getFont());
+        noExistingAssignee.setPrefWidth(width);
+        return noExistingAssignee;
     }
 
     private boolean hasSelectedAssignee(List<PickerAssignee> assigneeList) {
